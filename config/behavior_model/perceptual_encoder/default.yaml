@@ -1,0 +1,4 @@
+_target_: lumos.behavior_models.perceptual_encoders.code_encoder.CodeNetwork
+activation_function: ReLU #ELU
+dropout_vis_fc: 0.0
+visual_features: 128

@@ -1,0 +1,14 @@
+_target_: lumos.datasets.wm_disk_dataset.WMDiskDataset
+key: "vis"
+save_format: "npz"
+use_cached_data: true
+reset_prob: ${datamodule.reset_prob}
+batch_size: ${datamodule.batch_size}
+min_window_size: ${datamodule.seq_len}
+max_window_size: ${datamodule.seq_len}
+proprio_state: ${datamodule.proprioception_dims}
+obs_space: ${datamodule.observation_space}
+pad: false
+for_wm: true
+lang_folder: ""
+num_workers: 4

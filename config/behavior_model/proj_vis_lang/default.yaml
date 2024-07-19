@@ -1,0 +1,5 @@
+_target_: lumos.behavior_models.auxiliary_loss_networks.proj_vis_lang.ProjVisLang
+im_dim: ${behavior_model.plan_recognition.fc_hidden_size}
+lang_dim: ${behavior_model.language_goal.latent_goal_features}
+output_dim: ${behavior_model.language_goal.latent_goal_features}
+proj_lang: true

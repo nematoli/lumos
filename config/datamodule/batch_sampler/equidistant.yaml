@@ -1,0 +1,7 @@
+_target_: lumos.utils.samplers.EquiSampler
+_recursive_: false
+
+data_size: ???
+seq_len: ${datamodule.seq_len}
+batch_size: ${datamodule.batch_size}
+init_idx: null

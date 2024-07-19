@@ -1,0 +1,25 @@
+defaults:
+  - perceptual_encoder: default
+  - plan_proposal: default
+  - plan_recognition: transformers #birnn #
+  - distribution: discrete
+  - visual_goal: default
+  - language_goal: default
+  - action_decoder: gaussian #logistic # #
+  - critic: default
+  - loss: ac
+  - actor_optimizer: adam
+  - critic_optimizer: adamw
+  - proj_vis_lang: default
+
+_target_: lumos.behavior_models.lumos.LUMOS
+_recursive_: false
+
+world_model: ???
+seq_len: ${datamodule.datasets.vision_dataset.max_window_size}
+name: lumos
+replan_freq: 30
+use_clip_auxiliary_loss: true
+use_bc_loss: false
+gripper_control: false
+temperature: 1.0

@@ -1,0 +1,14 @@
+defaults:
+  - gru: default
+
+_target_: lumos.world_models.rssm.cell.RSSMCell
+_recursive_: false
+
+embed_dim: ???
+action_dim: ${datamodule.action_space}
+
+deter_dim: 1024
+stoch_dim: 32
+stoch_rank: 32
+hidden_dim: 1000
+layer_norm: true

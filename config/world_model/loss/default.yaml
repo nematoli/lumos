@@ -1,0 +1,4 @@
+kl_balance: 0.8
+kl_weight: 0.3
+image_weight: 1.0
+grad_clip: 100

@@ -1,0 +1,13 @@
+hydra-core
+hydra-colorlog
+torch==1.13.1
+torchvision
+torchmetrics
+pytorch-lightning==1.8.6
+transformers
+numpy
+matplotlib
+opencv-python
+tqdm
+wandb
+pyhash

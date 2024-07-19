@@ -1,0 +1,3 @@
+_target_: lumos.utils.distributions.Distribution
+dist: "continuous"
+plan_features: 256

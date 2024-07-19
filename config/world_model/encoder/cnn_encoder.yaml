@@ -1,0 +1,5 @@
+_target_: lumos.world_models.encoders.cnn_encoder.CnnEncoder
+cnn_depth: 48
+kernels: [4, 4, 4, 4]
+stride: 2
+activation: elu

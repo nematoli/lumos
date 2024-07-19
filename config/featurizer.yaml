@@ -1,0 +1,7 @@
+defaults:
+  - setup
+  - datamodule: wm
+  - world_model: dreamer_v2
+  - _self_
+
+exp_dir: ${wm_chk_dir}

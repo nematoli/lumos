@@ -1,0 +1,4 @@
+_target_: lumos.world_models.rssm.gru.GRUCellStack
+input_size: ${world_model.rssm.cell.hidden_dim}
+hidden_size: ${world_model.rssm.cell.deter_dim}
+n_layers: 1

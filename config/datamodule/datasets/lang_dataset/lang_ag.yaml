@@ -1,0 +1,15 @@
+_target_: lumos.datasets.ag_disk_dataset.AGDiskDataset
+key: "lang"
+save_format: "npz"
+batch_size: ${datamodule.batch_size}
+min_window_size: ${datamodule.min_window_size}
+max_window_size: ${datamodule.seq_len}
+proprio_state: ${datamodule.proprioception_dims}
+obs_space: ${datamodule.observation_space}
+skip_frames: 1
+pad: true
+for_wm: false
+lang_folder: "lang_paraphrase-MiniLM-L3-v2"
+aux_lang_loss_window: 8
+num_workers: 2
+

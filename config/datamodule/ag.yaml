@@ -1,0 +1,22 @@
+defaults:
+  - datasets: vision_lang_ag
+  - transforms: none
+  - proprioception_dims: robot_full
+  - observation_space: lang_feats_post_act
+  - batch_sampler: none
+
+_target_: lumos.datasets.calvin_data_module.CalvinDataModule
+_recursive_: false
+root_data_dir: ${root}/dataset/calvin/30_64_rgbsg
+action_space: 7
+action_max: [1., 1., 1., 1., 1., 1., 1.,]
+action_min: [-1., -1., -1., -1., -1., -1., -1]
+shuffle_val: false
+load_feats: true
+
+batch_size: 256
+seq_len: 32
+min_window_size: 20
+
+
+
