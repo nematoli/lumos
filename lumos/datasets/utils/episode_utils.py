@@ -10,6 +10,81 @@ import torch
 logger = logging.getLogger(__name__)
 
 
+def process_robot_obs(
+    episode: Dict[str, np.ndarray],
+    observation_space: DictConfig,
+    transforms: Dict,
+    proprio_state: DictConfig,
+    seq_idx: int = 0,
+    window_size: int = 0,
+) -> Dict[str, torch.Tensor]:
+    assert "robot_obs" in observation_space["state_obs"]
+    robot_obs_list_normalized = []
+    robot_obs_list_unnormalized = []
+    if window_size == 0 and seq_idx == 0:  # single file loader
+        robot_obs = torch.from_numpy(episode["robot_obs"]).float()
+    else:  # episode loader
+        robot_obs = torch.from_numpy(episode["robot_obs"][seq_idx : seq_idx + window_size]).float()
+    # expand dims for single environment obs
+    if len(robot_obs.shape) != 2:
+        robot_obs = robot_obs.unsqueeze(0)
+    # shape: (BxN_state_obs)
+    assert len(robot_obs.shape) == 2
+    if "robot_obs" in transforms:
+        robot_obs_normalized = transforms["robot_obs"](robot_obs)
+        robot_obs_list_normalized.append(robot_obs_normalized)
+    else:
+        robot_obs_list_normalized.append(robot_obs)
+    robot_obs_list_unnormalized.append(robot_obs)
+    seq_robot_obs = torch.cat(robot_obs_list_normalized, dim=1)
+    seq_robot_obs_unnormalized = torch.cat(robot_obs_list_unnormalized, dim=1)
+
+    if not proprio_state.normalize_robot_orientation and "robot_orientation_idx" in proprio_state:
+        seq_robot_obs[:, slice(*proprio_state.robot_orientation_idx)] = seq_robot_obs_unnormalized[
+            :, slice(*proprio_state.robot_orientation_idx)
+        ]
+
+    if not proprio_state.normalize:
+        seq_robot_obs = seq_robot_obs_unnormalized
+
+    return {"robot_obs": seq_robot_obs}
+
+
+def process_scene_obs(
+    episode: Dict[str, np.ndarray],
+    observation_space: DictConfig,
+    transforms: Dict,
+    proprio_state: DictConfig,
+    seq_idx: int = 0,
+    window_size: int = 0,
+) -> Dict[str, torch.Tensor]:
+    assert "scene_obs" in observation_space["state_obs"]
+    scene_obs_list_normalized = []
+    scene_obs_list_unnormalized = []
+    if window_size == 0 and seq_idx == 0:  # single file loader
+        scene_obs = torch.from_numpy(episode["scene_obs"]).float()
+    else:  # episode loader
+        scene_obs = torch.from_numpy(episode["scene_obs"][seq_idx : seq_idx + window_size]).float()
+    # expand dims for single environment obs
+    if len(scene_obs.shape) != 2:
+        scene_obs = scene_obs.unsqueeze(0)
+    # shape: (BxN_state_obs)
+    assert len(scene_obs.shape) == 2
+    if "scene_obs" in transforms:
+        scene_obs_normalized = transforms["scene_obs"](scene_obs)
+        scene_obs_list_normalized.append(scene_obs_normalized)
+    else:
+        scene_obs_list_normalized.append(scene_obs)
+    scene_obs_list_unnormalized.append(scene_obs)
+    seq_scene_obs = torch.cat(scene_obs_list_normalized, dim=1)
+    seq_scene_obs_unnormalized = torch.cat(scene_obs_list_unnormalized, dim=1)
+
+    if not proprio_state.normalize:
+        seq_scene_obs = seq_scene_obs_unnormalized
+
+    return {"scene_obs": seq_scene_obs}
+
+
 def process_state(
     episode: Dict[str, np.ndarray],
     observation_space: DictConfig,
@@ -162,7 +237,7 @@ def get_state_info_dict(episode: Dict[str, np.ndarray], for_wm: bool) -> Dict[st
     info = {
         "state_info": {
             "robot_obs": torch.from_numpy(episode["robot_obs"]),
-            # "scene_obs": torch.from_numpy(episode["scene_obs"]),
+            "scene_obs": torch.from_numpy(episode["scene_obs"]),
         }
     }
     if for_wm:

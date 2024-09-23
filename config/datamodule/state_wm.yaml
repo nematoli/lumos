@@ -1,0 +1,19 @@
+defaults:
+  - datasets: state_wm
+  - transforms: state_wm
+  - proprioception_dims: robot_scene
+  - observation_space: robot_scene_only
+  - batch_sampler: equidistant
+
+_target_: lumos.datasets.calvin_data_module.CalvinDataModule
+_recursive_: false
+root_data_dir: ${root}/dataset/calvin/state_only_play
+action_space: 7
+action_max: [1., 1., 1., 1., 1., 1., 1.,]
+action_min: [-1., -1., -1., -1., -1., -1., -1]
+shuffle_val: false
+load_feats: false
+
+reset_prob: 0.01
+batch_size: 50
+seq_len: 50

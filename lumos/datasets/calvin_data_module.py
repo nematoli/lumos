@@ -12,7 +12,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.trainer.supporters import CombinedLoader
 from torch.utils.data import DataLoader
 import torchvision
-from lumos.utils.nn_utils import transpose_collate_wm, transpose_collate_ag
+from lumos.utils.nn_utils import transpose_collate_wm, transpose_collate_ag, transpose_collate_state_wm
 import pickle
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,10 @@ class CalvinDataModule(pl.LightningDataModule):
         self.batch_sampler = batch_sampler
         self.load_feats = load_feats
 
-        self.use_shm = "shm_dataset" in self.datasets_cfg.vision_dataset._target_
+        if "vision_dataset" in self.datasets_cfg:
+            self.use_shm = "shm_dataset" in self.datasets_cfg.vision_dataset._target_
+        else:
+            self.use_shm = "shm_dataset" in self.datasets_cfg.state_dataset._target_
 
     def prepare_data(self, *args, **kwargs):
         # check if files already exist
@@ -116,7 +119,10 @@ class CalvinDataModule(pl.LightningDataModule):
         if self.load_feats:
             collate = transpose_collate_ag
         else:
-            collate = transpose_collate_wm
+            if "vision_dataset" in self.datasets_cfg:
+                collate = transpose_collate_wm
+            else:
+                collate = transpose_collate_state_wm
         if self.batch_sampler == {}:
             return {
                 key: DataLoader(
@@ -153,7 +159,10 @@ class CalvinDataModule(pl.LightningDataModule):
         if self.load_feats:
             collate = transpose_collate_ag
         else:
-            collate = transpose_collate_wm
+            if "vision_dataset" in self.datasets_cfg:
+                collate = transpose_collate_wm
+            else:
+                collate = transpose_collate_state_wm
         if self.batch_sampler == {}:
             val_dataloaders = {
                 key: DataLoader(

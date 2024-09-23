@@ -1,0 +1,7 @@
+logs/
+dataset/calvin/
+outputs/
+/.vscode
+
+*.pyc
+*.egg-info

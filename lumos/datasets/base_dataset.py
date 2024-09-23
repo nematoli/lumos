@@ -9,6 +9,8 @@ from lumos.datasets.utils.episode_utils import (
     process_language,
     process_rgb,
     process_state,
+    process_robot_obs,
+    process_scene_obs,
 )
 import numpy as np
 from omegaconf import DictConfig
@@ -96,6 +98,7 @@ class BaseDataset(Dataset):
         if self.for_wm:
             assert self.min_window_size == self.max_window_size
             self.with_lang = False
+        self.key = key
 
     def __getitem__(self, idx: Union[int, Tuple[int, int]]) -> Dict:
         """
@@ -139,9 +142,6 @@ class BaseDataset(Dataset):
 
         episode = self._load_episode(idx, window_size)
         if self.for_wm:
-            seq_state_obs = process_state(episode, self.observation_space, self.transforms, self.proprio_state)
-            seq_rgb_obs = process_rgb(episode, self.observation_space, self.transforms)
-            seq_depth_obs = process_depth(episode, self.observation_space, self.transforms)
             action_keys = copy.deepcopy(self.observation_space["actions"])
             action_keys.append("pre_actions")
             seq_acts = process_actions(episode, action_keys, self.transforms)
@@ -151,17 +151,28 @@ class BaseDataset(Dataset):
 
             seq_reset = {"reset": torch.from_numpy(episode["reset"]).bool()}
             seq_frames = {"frame": torch.from_numpy(episode["frame"])}
-
             seq_dict = {
-                **seq_state_obs,
-                **seq_rgb_obs,
-                **seq_depth_obs,
                 **seq_acts,
                 **info,
                 **seq_lang,
                 **seq_reset,
                 **seq_frames,
             }  # type:ignore
+
+            if "vis" in self.key:
+                seq_state_obs = process_state(episode, self.observation_space, self.transforms, self.proprio_state)
+                seq_rgb_obs = process_rgb(episode, self.observation_space, self.transforms)
+                seq_depth_obs = process_depth(episode, self.observation_space, self.transforms)
+                seq_dict.update(seq_rgb_obs)
+                seq_dict.update(seq_depth_obs)
+                seq_dict.update(seq_state_obs)
+            elif "state" in self.key:
+                seq_robot_obs = process_robot_obs(episode, self.observation_space, self.transforms, self.proprio_state)
+                seq_scene_obs = process_scene_obs(episode, self.observation_space, self.transforms, self.proprio_state)
+                seq_dict.update(seq_robot_obs)
+                seq_dict.update(seq_scene_obs)
+            else:
+                raise ValueError(f"key {self.key} not recognized")
 
         else:
             seq_features = {"feature": torch.from_numpy(episode["features"])}

@@ -2,11 +2,11 @@ seed: 42
 slurm: false
 device: cuda
 
-root: /home/${developer}/lumos 
+root: /home/${developer}/projects/lumos 
 log_dir: ${root}/logs
 exp_dir: null 
 wm_chk_dir: null
 ag_chk_dir: null
 
-developer: "nematoli"
+developer: "lagandua"
 comment: ""

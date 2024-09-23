@@ -14,7 +14,7 @@ sys.path.insert(0, Path(__file__).absolute().parents[1].as_posix())
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(version_base="1.3", config_path="../config", config_name="train_wm")
+@hydra.main(version_base="1.3", config_path="../config", config_name="train_state_wm")
 def train(cfg: DictConfig) -> None:
     """
     This is called to start a training.
@@ -38,6 +38,10 @@ def train(cfg: DictConfig) -> None:
             from lumos.world_models.dreamer_v2 import DreamerV2
 
             model = DreamerV2.load_from_checkpoint(chk.as_posix())
+        elif cfg.world_model.name == "dreamer_v2_state":
+            from lumos.world_models.dreamer_v2_state import DreamerV2_State
+
+            model = DreamerV2_State.load_from_checkpoint(chk.as_posix())
         else:
             raise NotImplementedError(f"Unknown model: {cfg.world_model.name}")
     else:

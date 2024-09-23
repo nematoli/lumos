@@ -1,0 +1,15 @@
+defaults:
+  - encoder: mlp_encoder
+  - decoder: mlp_decoder
+  - rssm: default
+  - amp: default
+  - optimizer: adamw
+  - loss: default
+
+_target_: lumos.world_models.dreamer_v2_state.DreamerV2_State
+_recursive_: false
+
+name: dreamer_v2_state
+batch_size: ${datamodule.batch_size}
+with_proprio: true
+gripper_control: false
