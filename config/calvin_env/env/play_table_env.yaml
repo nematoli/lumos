@@ -1,0 +1,12 @@
+_target_: calvin_env.envs.play_table_env.PlayTableSimEnv
+_recursive_: false
+cameras: ${calvin_env.cameras}
+seed: 0
+bullet_time_step: 240.0
+use_vr: ${calvin_env.use_vr}
+show_gui: false
+robot_cfg: ${calvin_env.robot}
+scene_cfg: ${calvin_env.scene}
+use_scene_info: true
+use_egl: true
+control_freq: 30

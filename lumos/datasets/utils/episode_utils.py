@@ -130,7 +130,11 @@ def process_state(
         state_obs_sliced.append(seq_state_obs_)
     seq_state_obs = torch.cat(state_obs_sliced, dim=1)
 
-    return {"robot_obs": seq_state_obs}
+    if "robot_obs" in state_obs_keys:
+        if "scene_obs" in state_obs_keys:
+            return {"state_obs": seq_state_obs}  # both robot and scene obs
+        return {"robot_obs": seq_state_obs}  # only robot obs
+    return {"scene_obs": seq_state_obs}  # only scene obs
 
 
 def process_rgb(

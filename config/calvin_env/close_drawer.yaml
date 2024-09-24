@@ -1,0 +1,15 @@
+seed: 0
+use_vr: false
+show_gui: false
+data_path: data
+save_dir: /tmp
+record: true
+
+defaults:
+  - cameras: static_and_gripper
+  - vr_input: vr_input
+  - env: play_table_env
+  - scene: calvin_scene_D_close_drawer
+  - robot: panda_longer_finger
+  - tasks: new_playtable_tasks
+  - recorder: recorder

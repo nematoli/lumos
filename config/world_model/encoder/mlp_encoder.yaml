@@ -1,4 +1,4 @@
-_target_: lumos.world_models.encoders.mlp_encoder.MLPEncoder
+_target_: lumos.world_models.encoders.mlp_encoder2.MLPEncoder
 robot_dim: 15
 scene_dim: 24
 output_dim: 1024

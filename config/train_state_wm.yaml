@@ -5,11 +5,13 @@ defaults:
   - world_model: dreamer_v2_state
   - trainer: wm_default
   - logger: wandb
+  - calvin_env: new_default
   - _self_
 
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
 
+devices: [1]
 script: state_wm
 
 hydra:

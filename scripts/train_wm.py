@@ -47,6 +47,8 @@ def train(cfg: DictConfig) -> None:
     else:
         model = hydra.utils.instantiate(cfg.world_model)
 
+    model.calvin_env_cfg = cfg.calvin_env
+
     trainer_args = {**cfg.trainer, "logger": setup_logger(cfg), "callbacks": setup_callbacks(cfg.callbacks)}
     trainer = Trainer(**trainer_args)
 

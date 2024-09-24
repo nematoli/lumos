@@ -167,10 +167,10 @@ class BaseDataset(Dataset):
                 seq_dict.update(seq_depth_obs)
                 seq_dict.update(seq_state_obs)
             elif "state" in self.key:
-                seq_robot_obs = process_robot_obs(episode, self.observation_space, self.transforms, self.proprio_state)
-                seq_scene_obs = process_scene_obs(episode, self.observation_space, self.transforms, self.proprio_state)
-                seq_dict.update(seq_robot_obs)
-                seq_dict.update(seq_scene_obs)
+                seq_robot_scene_obs = process_state(
+                    episode, self.observation_space, self.transforms, self.proprio_state
+                )
+                seq_dict.update(seq_robot_scene_obs)
             else:
                 raise ValueError(f"key {self.key} not recognized")
 
