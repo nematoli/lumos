@@ -74,7 +74,7 @@ def transpose_collate_state_wm(batch):
     collated_batch = default_collate(batch)
     transposed_batch = {}
 
-    fields = ["reset", "robot_obs", "frame"]
+    fields = ["reset", "state_obs", "frame"]
     nested_fields = {
         "state_info": ["robot_obs", "pre_robot_obs"],
         "actions": ["rel_actions", "pre_actions"],
@@ -89,7 +89,10 @@ def transpose_collate_state_wm(batch):
             transposed_batch[key] = torch.transpose(value, 0, 1)
         else:
             transposed_batch[key] = value
-
+    to_pop = ["state_info", "lang"]
+    for key in to_pop:
+        if key in transposed_batch:
+            transposed_batch.pop(key)
     return transposed_batch
 
 

@@ -66,7 +66,7 @@ class DreamerV2_State(WorldModel):
 
         self.batch_metrics = [
             "loss_total",
-            "loss_img",
+            "loss_recon",
             "loss_kl",
             "loss_kl-post",
             "loss_kl-prior",
@@ -98,7 +98,7 @@ class DreamerV2_State(WorldModel):
         self,
         state_obs: Tensor,
         act: Tensor,
-        pre_robot_obs: Tensor,
+        # pre_robot_obs: Tensor,
         reset: Tensor,
         in_state: Tensor,
         local_act: Tensor = None,
@@ -108,20 +108,20 @@ class DreamerV2_State(WorldModel):
         # if self.with_proprio:
         #     embed = torch.cat((embed, proprio), -1)
 
-        if local_act is not None:
-            act = local_act
-        elif self.gripper_control:
-            act = world_to_tcp_frame(act, pre_robot_obs)
+        # if local_act is not None:
+        #     act = local_act
+        # elif self.gripper_control:
+        #     act = world_to_tcp_frame(act, pre_robot_obs)
 
         prior, post, features, out_states = self.rssm_core.forward(embed, act, reset, in_state)
 
-        dcd_robot_scene_obs = self.decoder(features)
+        dcd_state_obs = self.decoder(features)
 
         outputs = {
             "prior": prior,
             "post": post,
             "features": features,
-            "dcd_robot_scene_obs": dcd_robot_scene_obs,
+            "dcd_state_obs": dcd_state_obs,
             "out_states": out_states,
         }
 
@@ -132,7 +132,7 @@ class DreamerV2_State(WorldModel):
         self,
         state_obs: Tensor,
         actions: Tensor,
-        pre_robot_obs: Tensor,
+        # pre_robot_obs: Tensor,
         reset: Tensor,
         in_state: Tensor,
         local_act: Tensor = None,
@@ -142,7 +142,7 @@ class DreamerV2_State(WorldModel):
             outs = self(
                 state_obs.to(self.device),
                 actions.to(self.device),
-                pre_robot_obs.to(self.device),
+                # pre_robot_obs.to(self.device),
                 reset.to(self.device),
                 in_state,
                 local_act=local_act,
@@ -176,7 +176,7 @@ class DreamerV2_State(WorldModel):
             outs = self(
                 batch["state"]["state_obs"],
                 batch["state"]["actions"]["pre_actions"],
-                batch["state"]["state_info"]["pre_robot_obs"],
+                # batch["state"]["state_info"]["pre_robot_obs"],
                 batch["state"]["reset"],
                 self.in_state,
             )
@@ -190,7 +190,7 @@ class DreamerV2_State(WorldModel):
         if self.global_step % self.trainer.log_every_n_steps == 0:
             self.spawn_env()
             true_img_s, true_img_g = self.render_environment(batch["state"]["state_obs"][-1, 0])
-            dcd_img_s, dcd_img_g = self.render_environment(outs["dcd_robot_scene_obs"][-1, 0])
+            dcd_img_s, dcd_img_g = self.render_environment(outs["dcd_state_obs"][-1, 0])
             pred_state_obs = self.pred_state_obs(*samples)
             pred_img_s, pred_img_g = self.render_environment(pred_state_obs[-1, 0])
             self.log_images(
@@ -219,8 +219,8 @@ class DreamerV2_State(WorldModel):
         with self.autocast:
             outs = self(
                 batch["state"]["state_obs"],
-                batch["state"]["rel_actions"]["pre_actions"],
-                batch["state"]["state_info"]["pre_robot_obs"],
+                batch["state"]["actions"]["pre_actions"],
+                # batch["state"]["state_info"]["pre_robot_obs"],
                 batch["state"]["reset"],
                 self.in_state,
             )
@@ -233,7 +233,7 @@ class DreamerV2_State(WorldModel):
             self.running_metrics[key] += losses[key]
 
         true_img_s, true_img_g = self.render_environment(batch["state"]["state_obs"][-1, 0])
-        dcd_img_s, dcd_img_g = self.render_environment(outs["dcd_robot_scene_obs"][-1, 0])
+        dcd_img_s, dcd_img_g = self.render_environment(outs["dcd_state_obs"][-1, 0])
 
         # keep track of last batch for logging
         self.val_gt_img_s = true_img_s
@@ -251,7 +251,7 @@ class DreamerV2_State(WorldModel):
         for key in self.running_metrics.keys():
             self.running_metrics[key] /= num_val_batches
         self.log_metrics(self.running_metrics, mode="val")
-        pred_state_obs = self.pred_state_obs(self.val_samples)
+        pred_state_obs = self.pred_state_obs(*self.val_samples)
         pred_img_s, pred_img_g = self.render_environment(pred_state_obs[-1, 0])
         self.log_images(
             self.val_gt_img_s,
@@ -260,7 +260,7 @@ class DreamerV2_State(WorldModel):
             self.val_dcd_img_g,
             pred_img_s,
             pred_img_g,
-            mode="train",
+            mode="val",
         )
 
     def loss(self, batch: Dict[str, Tensor], outs: Dict[str, Tensor]) -> Dict[str, Tensor]:
@@ -270,7 +270,7 @@ class DreamerV2_State(WorldModel):
         loss_kl_prior = D.kl.kl_divergence(self.rssm_core.zdistr(outs["post"].detach()), dprior)
         loss_kl = (1 - self.kl_balance) * loss_kl_post + self.kl_balance * loss_kl_prior
 
-        loss_reconstr = 0.5 * torch.square(outs["dcd_robot_scene_obs"] - batch["state"]["state_obs"]).sum(
+        loss_reconstr = 0.5 * torch.square(outs["dcd_state_obs"] - batch["state"]["state_obs"]).sum(
             dim=[-1, -2, -3]
         )  # MSE
 

@@ -5,6 +5,7 @@ import cv2
 import shutil
 from pathlib import Path
 from tqdm import tqdm
+from lumos.utils.rotation_transformer import RotationTransformer
 
 
 def resize_image(image, intp, resolution=64):
@@ -20,6 +21,14 @@ def process_dataset(cfg: DictConfig) -> None:
     keys = cfg.desired_keys
     img_size = cfg.desired_resolution
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    rot_transform = RotationTransformer(from_rep="euler_angles", to_rep="rotation_6d", from_convention="XYZ")
+
+    running_mean_robot_obs = np.zeros(18)
+    running_var_robot_obs = np.zeros(18)
+    running_mean_scene_obs = np.zeros(33)
+    running_var_scene_obs = np.zeros(33)
+    counter = 0
     """Process the Calvin dataset and create a smaller version of it."""
     for split in ["training", "validation"]:
         split_path = Path(input_dir) / split
@@ -35,25 +44,87 @@ def process_dataset(cfg: DictConfig) -> None:
 
         shutil.copy(orig_ep_start_end_ids, new_ep_start_end_ids)
 
+        # Maintain running mean and std for normalization
+
         # Iterate over .npz files in the directory
         for npz_file in tqdm(split_path.glob("episode_*.npz"), desc=f"Processing {split} data"):
             data = np.load(npz_file)
             extracted_data = {}
 
             for key in keys:
+                # Replace the euler angles of the robot with rotation_6d
+                if "robot_obs" in key:
+                    robot_obs = data["robot_obs"]
+                    euler_angles = robot_obs[3:6]
+                    rotation_6d = rot_transform.forward(euler_angles)
+                    new_robot_obs = np.concatenate([robot_obs[:3], rotation_6d, robot_obs[6:]])
+
+                # Replace the euler angles of the scene with rotation_6d
+                if "scene_obs" in key:
+                    scene_obs = data["scene_obs"]
+                    # red, blue, pink blocks respectively
+                    indices = [[9, 10, 11], [15, 16, 17], [21, 22, 23]]
+                    rotation_6ds = []
+                    for idx in indices:
+                        euler_angles = scene_obs[idx]
+                        rotation_6d = rot_transform.forward(euler_angles)
+                        rotation_6ds.append(rotation_6d)
+                    new_scene_obs = np.concatenate(
+                        [
+                            scene_obs[:9],
+                            rotation_6ds[0],
+                            scene_obs[12:15],
+                            rotation_6ds[1],
+                            scene_obs[18:21],
+                            rotation_6ds[2],
+                        ],
+                    )
+
                 if key in data.keys():
                     if key.startswith("rgb"):
                         extracted_data[key] = resize_image(data[key], intp=cv2.INTER_AREA, resolution=img_size)
                     elif key.startswith("depth"):
                         extracted_data[key] = resize_image(data[key], intp=cv2.INTER_NEAREST, resolution=img_size)
-                    else:
-                        extracted_data[key] = data[key]
+                    elif key == "robot_obs":
+                        extracted_data[key] = new_robot_obs
+                    elif key == "scene_obs":
+                        extracted_data[key] = new_scene_obs
                 else:
                     print(f"Key {key} not found in {npz_file}")
+
+            counter += 1
+            if "robot_obs" in keys:
+                robot_obs = extracted_data["robot_obs"]
+                delta = robot_obs - running_mean_robot_obs
+                running_mean_robot_obs += delta / counter
+                running_var_robot_obs += delta * (robot_obs - running_mean_robot_obs)
+
+            if "scene_obs" in keys:
+                scene_obs = extracted_data["scene_obs"]
+                delta = scene_obs - running_mean_scene_obs
+                running_mean_scene_obs += delta / counter
+                running_var_scene_obs += delta * (scene_obs - running_mean_scene_obs)
 
             # Prepare the filename for the output file
             output_file = output_split_path / npz_file.name
             np.savez_compressed(output_file, **extracted_data)
+
+        # Calculate the running std
+        running_std_robot_obs = np.sqrt(running_var_robot_obs / counter)
+        running_std_scene_obs = np.sqrt(running_var_scene_obs / counter)
+
+        # Save the running mean and std for normalization
+        np.savez_compressed(
+            output_split_path / "robot_scene_statistics.npz",
+            robot_obs_mean=running_mean_robot_obs,
+            robot_obs_std=running_std_robot_obs,
+            scene_obs_mean=running_mean_scene_obs,
+            scene_obs_stf=running_std_scene_obs,
+        )
+        print("running_mean_robot_obs: ", running_mean_robot_obs)
+        print("running_std_robot_obs: ", running_std_robot_obs)
+        print("running_mean_scene_obs: ", running_mean_scene_obs)
+        print("running_std_scene_obs: ", running_std_scene_obs)
 
 
 if __name__ == "__main__":
