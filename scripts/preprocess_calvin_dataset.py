@@ -24,11 +24,6 @@ def process_dataset(cfg: DictConfig) -> None:
 
     rot_transform = RotationTransformer(from_rep="euler_angles", to_rep="rotation_6d", from_convention="XYZ")
 
-    running_mean_robot_obs = np.zeros(18)
-    running_var_robot_obs = np.zeros(18)
-    running_mean_scene_obs = np.zeros(33)
-    running_var_scene_obs = np.zeros(33)
-    counter = 0
     """Process the Calvin dataset and create a smaller version of it."""
     for split in ["training", "validation"]:
         split_path = Path(input_dir) / split
@@ -44,7 +39,13 @@ def process_dataset(cfg: DictConfig) -> None:
 
         shutil.copy(orig_ep_start_end_ids, new_ep_start_end_ids)
 
-        # Maintain running mean and std for normalization
+        # Copy lang annotations from original folder to new folder
+        orig_lang_annotations = split_path / "lang_annotations" / "auto_lang_ann.npy"
+
+        output_split_lang_path = output_split_path / "lang_annotations"
+        output_split_lang_path.mkdir(parents=True, exist_ok=True)
+        new_lang_annotations = output_split_lang_path / "auto_lang_ann.npy"
+        shutil.copy(orig_lang_annotations, new_lang_annotations)
 
         # Iterate over .npz files in the directory
         for npz_file in tqdm(split_path.glob("episode_*.npz"), desc=f"Processing {split} data"):
@@ -89,42 +90,14 @@ def process_dataset(cfg: DictConfig) -> None:
                         extracted_data[key] = new_robot_obs
                     elif key == "scene_obs":
                         extracted_data[key] = new_scene_obs
+                    else:
+                        extracted_data[key] = data[key]
                 else:
                     print(f"Key {key} not found in {npz_file}")
-
-            counter += 1
-            if "robot_obs" in keys:
-                robot_obs = extracted_data["robot_obs"]
-                delta = robot_obs - running_mean_robot_obs
-                running_mean_robot_obs += delta / counter
-                running_var_robot_obs += delta * (robot_obs - running_mean_robot_obs)
-
-            if "scene_obs" in keys:
-                scene_obs = extracted_data["scene_obs"]
-                delta = scene_obs - running_mean_scene_obs
-                running_mean_scene_obs += delta / counter
-                running_var_scene_obs += delta * (scene_obs - running_mean_scene_obs)
 
             # Prepare the filename for the output file
             output_file = output_split_path / npz_file.name
             np.savez_compressed(output_file, **extracted_data)
-
-        # Calculate the running std
-        running_std_robot_obs = np.sqrt(running_var_robot_obs / counter)
-        running_std_scene_obs = np.sqrt(running_var_scene_obs / counter)
-
-        # Save the running mean and std for normalization
-        np.savez_compressed(
-            output_split_path / "robot_scene_statistics.npz",
-            robot_obs_mean=running_mean_robot_obs,
-            robot_obs_std=running_std_robot_obs,
-            scene_obs_mean=running_mean_scene_obs,
-            scene_obs_stf=running_std_scene_obs,
-        )
-        print("running_mean_robot_obs: ", running_mean_robot_obs)
-        print("running_std_robot_obs: ", running_std_robot_obs)
-        print("running_mean_scene_obs: ", running_mean_scene_obs)
-        print("running_std_scene_obs: ", running_std_scene_obs)
 
 
 if __name__ == "__main__":
