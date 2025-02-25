@@ -240,12 +240,12 @@ def get_state_info_dict(episode: Dict[str, np.ndarray], for_wm: bool) -> Dict[st
     """
     info = {
         "state_info": {
-            "robot_obs": torch.from_numpy(episode["robot_obs"]),
-            "scene_obs": torch.from_numpy(episode["scene_obs"]),
+            # "robot_obs": torch.from_numpy(episode["robot_obs"]),
+            # "scene_obs": torch.from_numpy(episode["scene_obs"]),
         }
     }
-    if for_wm:
-        info["state_info"]["pre_robot_obs"] = torch.from_numpy(episode["pre_robot_obs"])
+    # if for_wm:
+    #     info["state_info"]["pre_robot_obs"] = torch.from_numpy(episode["pre_robot_obs"])
     return info
 
 
@@ -265,9 +265,10 @@ def load_dataset_statistics(train_dataset_dir, val_dataset_dir, transforms):
     paths = {"train": train_dataset_dir, "val": val_dataset_dir}
     for dataset_type in ["train", "val"]:
         try:
-            statistics = OmegaConf.load(Path(paths[dataset_type]) / "statistics.yaml")
+            statistics = OmegaConf.load(Path(paths[dataset_type]) / "statistics_minmax.yaml")
             # Hack for maintaining two repositories with transforms
-            statistics = OmegaConf.create(OmegaConf.to_yaml(statistics).replace("calvin_agent.", "lumos."))
+            # statistics = OmegaConf.create(OmegaConf.to_yaml(statistics).replace("calvin_agent.", "lumos."))
+            statistics = OmegaConf.create(OmegaConf.to_yaml(statistics).replace("util.", "lumos.utils."))
             # this ugly piece of code only exists because OmegaConf actually can't merge ListConfigs.
             # we do not want to override everything, but just the transforms that are specified in both
             # see https://stackoverflow.com/questions/61315623/omegaconf-can-i-influence-how-lists-are-merged
@@ -312,3 +313,35 @@ def lookup_naming_pattern(dataset_dir: Path, save_format: str) -> Tuple[Tuple[Pa
     assert len(naming_pattern) == 2
     assert n_digits > 0
     return naming_pattern, n_digits
+
+
+# Multistep preprocessing functions
+def reshape_actions_multistep(
+    actions_dict: Dict[str, torch.Tensor], action_keys: int, multi_steps: int
+) -> Dict[str, torch.Tensor]:
+    """
+    Reshape actions for multi-step prediction.
+
+    Example: From (200, 7) to (50, 28) for multi_steps=4.
+    """
+    for key in action_keys:
+        actions = actions_dict[key]
+        actions = actions.view(-1, multi_steps, actions.shape[-1])
+        actions = actions.view(-1, actions.shape[-1] * multi_steps)
+        actions_dict[key] = actions
+    return actions_dict
+
+
+def filter_trajectory_multistep(
+    obs_dict: Dict[str, torch.Tensor], obs_keys: List[str], multi_steps: int
+) -> Dict[str, torch.Tensor]:
+    """
+    Filter the trajectory for multi-step prediction.
+
+    Example: From (200, 39) to (50, 39) for multi_steps=4.
+    """
+    for key in obs_keys:
+        obs = obs_dict[key]
+        obs = obs[::multi_steps]
+        obs_dict[key] = obs
+    return obs_dict

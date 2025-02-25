@@ -1,0 +1,12 @@
+train:
+  robot_obs:
+    - _target_: lumos.utils.transforms.NormalizeVectorMinMax
+  scene_obs:
+    - _target_: lumos.utils.transforms.NormalizeVectorMinMax
+
+
+val:
+  robot_obs:
+    - _target_: lumos.utils.transforms.NormalizeVectorMinMax
+  scene_obs:
+    - _target_: lumos.utils.transforms.NormalizeVectorMinMax

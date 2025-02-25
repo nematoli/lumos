@@ -11,6 +11,8 @@ from lumos.datasets.utils.episode_utils import (
     process_state,
     process_robot_obs,
     process_scene_obs,
+    reshape_actions_multistep,
+    filter_trajectory_multistep,
 )
 import numpy as np
 from omegaconf import DictConfig
@@ -74,6 +76,7 @@ class BaseDataset(Dataset):
         pad: bool = True,
         aux_lang_loss_window: int = 1,
         for_wm: bool = False,
+        **kwargs,
     ):
         self.observation_space = obs_space
         self.proprio_state = proprio_state
@@ -99,6 +102,11 @@ class BaseDataset(Dataset):
             assert self.min_window_size == self.max_window_size
             self.with_lang = False
         self.key = key
+
+        if "action_steps" in kwargs:
+            self.action_steps = kwargs["action_steps"]
+        else:
+            self.action_steps = 1
 
     def __getitem__(self, idx: Union[int, Tuple[int, int]]) -> Dict:
         """
@@ -162,15 +170,22 @@ class BaseDataset(Dataset):
             if "vis" in self.key:
                 seq_state_obs = process_state(episode, self.observation_space, self.transforms, self.proprio_state)
                 seq_rgb_obs = process_rgb(episode, self.observation_space, self.transforms)
-                seq_depth_obs = process_depth(episode, self.observation_space, self.transforms)
+                # seq_depth_obs = process_depth(episode, self.observation_space, self.transforms)
                 seq_dict.update(seq_rgb_obs)
-                seq_dict.update(seq_depth_obs)
+                # seq_dict.update(seq_depth_obs)
                 seq_dict.update(seq_state_obs)
             elif "state" in self.key:
                 seq_robot_scene_obs = process_state(
                     episode, self.observation_space, self.transforms, self.proprio_state
                 )
                 seq_dict.update(seq_robot_scene_obs)
+            elif "hybrid" in self.key:
+                seq_robot_scene_obs = process_state(
+                    episode, self.observation_space, self.transforms, self.proprio_state
+                )
+                seq_rgb_obs = process_rgb(episode, self.observation_space, self.transforms)
+                seq_dict.update(seq_robot_scene_obs)
+                seq_dict.update(seq_rgb_obs)
             else:
                 raise ValueError(f"key {self.key} not recognized")
 
@@ -191,6 +206,13 @@ class BaseDataset(Dataset):
                 **seq_lang,
             }  # type:ignore
 
+        if self.action_steps > 1:
+            seq_dict["actions"] = reshape_actions_multistep(
+                seq_dict["actions"],
+                self.observation_space["actions"] + ["pre_actions"],
+                self.action_steps,
+            )
+            seq_dict = filter_trajectory_multistep(seq_dict, ["state_obs", "frame"], self.action_steps)
         seq_dict["idx"] = idx  # type:ignore
 
         return seq_dict

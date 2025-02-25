@@ -9,10 +9,12 @@ from lumos.utils.nn_utils import init_weights
 from lumos.world_models.world_model import WorldModel
 import torch.distributions as D
 from lumos.utils.gripper_control import world_to_tcp_frame
-from lumos.utils.calvin_lowdim import CALVINLowdimWrapper
+
+# from lumos.utils.calvin_lowdim import CALVINLowdimWrapper
+from lumos.utils.calvin_lowdim_rot6d import CALVINLowdimWrapper
 import wandb
 import yaml
-from lumos.utils.transforms import NormalizeVector
+from lumos.utils.transforms import NormalizeVector, NormalizeVectorMinMax, UnnormalizeVectorMinMax
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +178,6 @@ class DreamerV2_State(WorldModel):
             outs = self(
                 batch["state"]["state_obs"],
                 batch["state"]["actions"]["pre_actions"],
-                # batch["state"]["state_info"]["pre_robot_obs"],
                 batch["state"]["reset"],
                 self.in_state,
             )
@@ -290,8 +291,35 @@ class DreamerV2_State(WorldModel):
 
         return metrics
 
-    def render_environment(self, state) -> None:
-        with open("/home/lagandua/projects/lumos/dataset/calvin/statistics.yaml", "r") as f:
+    def render_environment(self, state):
+        return self.render_environment_minmax(state)
+        # return self.render_environment_meanstd(state)
+
+    def render_environment_minmax(self, state):
+        stats_path = "/home/lagandua/projects/dppo/data/statistics_minmax.yaml"
+        with open(stats_path, "r") as f:
+            stats = yaml.safe_load(f)
+            robot_obs_min = torch.tensor(stats["robot_obs"][0]["min"])
+            robot_obs_max = torch.tensor(stats["robot_obs"][0]["max"])
+            scene_obs_min = torch.tensor(stats["scene_obs"][0]["min"])
+            scene_obs_max = torch.tensor(stats["scene_obs"][0]["max"])
+
+        # Unnormalize the state
+        unnormalize_robot = UnnormalizeVectorMinMax(robot_obs_min, robot_obs_max)
+        unnormalize_scene = UnnormalizeVectorMinMax(scene_obs_min, scene_obs_max)
+
+        robot_obs = unnormalize_robot(state[:18].detach().cpu()).numpy()
+        scene_obs = unnormalize_scene(state[18:].detach().cpu()).numpy()
+
+        scene_obs[4] = 0 if scene_obs[4] < 1 else 1
+        scene_obs[5] = 0 if scene_obs[5] < 1 else 1
+        self.env.reset(scene_obs=scene_obs, robot_obs=robot_obs)
+        renders = self.env.render()
+        return renders[0], renders[1]
+
+    def render_environment_meanstd(self, state):
+        stats_path = "/home/lagandua/projects/dppo/data/statistics_old.yaml"
+        with open(stats_path, "r") as f:
             stats = yaml.safe_load(f)
             robot_obs_mean = torch.tensor(stats["robot_obs"][0]["mean"])
             robot_obs_std = torch.tensor(stats["robot_obs"][0]["std"])
@@ -302,8 +330,8 @@ class DreamerV2_State(WorldModel):
         unnormalize_robot = NormalizeVector(-robot_obs_mean / robot_obs_std, 1 / robot_obs_std)
         unnormalize_scene = NormalizeVector(-scene_obs_mean / scene_obs_std, 1 / scene_obs_std)
 
-        robot_obs = unnormalize_robot(state[:15].detach().cpu()).numpy()
-        scene_obs = unnormalize_scene(state[15:].detach().cpu()).numpy()
+        robot_obs = unnormalize_robot(state[:18].detach().cpu()).numpy()
+        scene_obs = unnormalize_scene(state[18:].detach().cpu()).numpy()
 
         scene_obs[4] = 0 if scene_obs[4] < 1 else 1
         scene_obs[5] = 0 if scene_obs[5] < 1 else 1

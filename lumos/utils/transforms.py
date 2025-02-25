@@ -79,3 +79,33 @@ class NormalizeVector(object):
 
     def __repr__(self):
         return self.__class__.__name__ + "(mean={0}, std={1})".format(self.mean, self.std)
+
+
+class NormalizeVectorMinMax(object):
+    """Normalize a tensor vector with max and min values."""
+
+    def __init__(self, min, max):
+        self.min = torch.as_tensor(min)
+        self.max = torch.as_tensor(max)
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        assert isinstance(tensor, torch.Tensor)
+        return (tensor - self.min) / (self.max - self.min)
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(min={0}, max={1})".format(self.min, self.max)
+
+
+class UnnormalizeVectorMinMax(object):
+    """Unnormalize a tensor vector with max and min values."""
+
+    def __init__(self, min, max):
+        self.min = torch.as_tensor(min)
+        self.max = torch.as_tensor(max)
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        assert isinstance(tensor, torch.Tensor)
+        return tensor * (self.max - self.min) + self.min
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(min={0}, max={1})".format(self.min, self.max)

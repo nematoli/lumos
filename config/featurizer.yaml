@@ -1,7 +1,14 @@
 defaults:
   - setup
-  - datamodule: wm
-  - world_model: dreamer_v2
-  - _self_
+  - datamodule: state_wm_rot6d
+  - world_model: dreamer_v2_state
+  # - _self_
 
 exp_dir: ${wm_chk_dir}
+# 39 Obs
+# wm_chk_dir: "/home/lagandua/projects/lumos/logs/runs/2024-11-23/23-22-21/model_weights/200000.ckpt"
+# Rot6D - MinMax
+# wm_chk_dir: "/home/lagandua/projects/lumos/logs/runs/2024-11-27/08-43-03/model_weights/last.ckpt"
+# Rot6D - MinMax - Small Network
+wm_chk_dir: "/home/lagandua/projects/lumos/logs/runs/2024-12-05/13-43-41/model_weights/700000.ckpt"
+output_file: "cached_feats_rot6d_minmax_small_700K.pkl"
