@@ -1,0 +1,5 @@
+_target_: lumos.world_models.encoders.mlp_encoder3.MLPEncoder
+state_dim: 51
+output_dim: 512
+mlp_layers: [400]
+activation: elu

@@ -1,0 +1,15 @@
+defaults:
+  - setup
+  - datamodule: hybrid_wm
+  - world_model: dreamer_v2_hybrid
+  # - _self_
+
+exp_dir: ${wm_chk_dir}
+# 39 Obs
+# wm_chk_dir: "/home/lagandua/projects/lumos/logs/runs/2024-11-23/23-22-21/model_weights/200000.ckpt"
+# Hybrid Rot6D - MinMax - Small
+# wm_chk_dir: "/home/lagandua/projects/lumos/logs/runs/2024-12-06/18-35-00/model_weights/1500000.ckpt"
+# Hybrid2 - Rot6D - MinMax - Small
+wm_chk_dir: "/home/lagandua/projects/lumos/logs/runs/2025-01-14/13-23-10/model_weights/last_750K.ckpt"
+output_file: "cached_feats_hybrid2_small_750K.pkl"
+device: 0

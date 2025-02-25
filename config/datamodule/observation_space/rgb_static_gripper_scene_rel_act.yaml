@@ -1,0 +1,5 @@
+rgb_obs: ['rgb_static', 'rgb_gripper']
+depth_obs: []
+state_obs: ['scene_obs']
+actions: ['rel_actions']
+language: []

@@ -2,5 +2,5 @@ _target_: lumos.world_models.decoders.mlp_decoder2.MLPDecoder
 in_dim: ???
 robot_dim: ${world_model.encoder.robot_dim}
 scene_dim: ${world_model.encoder.scene_dim}
-mlp_layers: [400, 400, 400, 400]
+mlp_layers: [400]
 activation: elu

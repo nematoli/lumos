@@ -1,0 +1,16 @@
+defaults:
+  - encoder: cnn_encoder
+  - encoder_state: mlp_encoder3
+  - decoder: hybrid_decoder
+  - rssm: default
+  - amp: default
+  - optimizer: adamw
+  - loss: default
+
+_target_: lumos.world_models.dreamer_v2_hybrid.DreamerV2_Hybrid
+_recursive_: false
+
+name: dreamer_v2_hybrid
+batch_size: ${datamodule.batch_size}
+with_proprio: false
+gripper_control: false
