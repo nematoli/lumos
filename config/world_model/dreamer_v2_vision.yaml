@@ -1,0 +1,15 @@
+defaults:
+  - encoder: cnn_encoder
+  - decoder: cnn_decoder
+  - rssm: default
+  - amp: default
+  - optimizer: adamw
+  - loss: default
+
+_target_: lumos.world_models.dreamer_v2_vision.DreamerV2
+_recursive_: false
+
+name: dreamer_v2
+batch_size: ${datamodule.batch_size}
+with_proprio: true
+gripper_control: false

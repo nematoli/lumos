@@ -12,7 +12,13 @@ import pytorch_lightning as pl
 from pytorch_lightning.trainer.supporters import CombinedLoader
 from torch.utils.data import DataLoader
 import torchvision
-from lumos.utils.nn_utils import transpose_collate_wm, transpose_collate_ag, transpose_collate_state_wm
+from lumos.utils.nn_utils import (
+    transpose_collate_wm,
+    transpose_collate_ag,
+    transpose_collate_state_wm,
+    transpose_collate_hybrid_wm,
+    transpose_collate_vision_wm,
+)
 import pickle
 
 logger = logging.getLogger(__name__)
@@ -49,6 +55,8 @@ class CalvinDataModule(pl.LightningDataModule):
 
         if "vision_dataset" in self.datasets_cfg:
             self.use_shm = "shm_dataset" in self.datasets_cfg.vision_dataset._target_
+        elif "hybrid_dataset" in self.datasets_cfg:
+            self.use_shm = "shm_dataset" in self.datasets_cfg.hybrid_dataset._target_
         else:
             self.use_shm = "shm_dataset" in self.datasets_cfg.state_dataset._target_
 
@@ -120,7 +128,10 @@ class CalvinDataModule(pl.LightningDataModule):
             collate = transpose_collate_ag
         else:
             if "vision_dataset" in self.datasets_cfg:
-                collate = transpose_collate_wm
+                # collate = transpose_collate_wm
+                collate = transpose_collate_vision_wm
+            elif "hybrid_dataset" in self.datasets_cfg:
+                collate = transpose_collate_hybrid_wm
             else:
                 collate = transpose_collate_state_wm
         if self.batch_sampler == {}:
@@ -160,7 +171,10 @@ class CalvinDataModule(pl.LightningDataModule):
             collate = transpose_collate_ag
         else:
             if "vision_dataset" in self.datasets_cfg:
-                collate = transpose_collate_wm
+                # collate = transpose_collate_wm
+                collate = transpose_collate_vision_wm
+            elif "hybrid_dataset" in self.datasets_cfg:
+                collate = transpose_collate_hybrid_wm
             else:
                 collate = transpose_collate_state_wm
         if self.batch_sampler == {}:

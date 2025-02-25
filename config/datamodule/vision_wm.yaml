@@ -1,0 +1,20 @@
+defaults:
+  - datasets: vision_wm
+  - transforms: vision_wm
+  - proprioception_dims: robot_rot6d
+  - observation_space: rgb_static_gripper_rel_act
+  - batch_sampler: equidistant
+
+_target_: lumos.datasets.calvin_data_module.CalvinDataModule
+_recursive_: false
+# root_data_dir: ${root}/dataset/calvin/debug_rgb64_rot6d
+root_data_dir: ${root}/dataset/calvin/play_rgb64_rot6d
+action_space: 7
+action_max: [1., 1., 1., 1., 1., 1., 1.,]
+action_min: [-1., -1., -1., -1., -1., -1., -1]
+shuffle_val: false
+load_feats: false
+
+reset_prob: 0.01
+batch_size: 50
+seq_len: 50
