@@ -41,7 +41,7 @@ If you find the code useful, please cite:
 **LUMOS**
 ```bibtex
 @inproceedings{nematollahi25icra,
-  author  = {Iman Nematollahi and Branton DeMoss and Akshay L Chandra and Nick Hawes and Wolfram Burgard and Ingmar Posner}
+  author  = {Iman Nematollahi and Branton DeMoss and Akshay L Chandra and Nick Hawes and Wolfram Burgard and Ingmar Posner},
   title   = {LUMOS: Language-Conditioned Imitation Learning with World Models},
   booktitle = {Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)},
   year    = {2025},
