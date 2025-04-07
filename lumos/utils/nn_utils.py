@@ -133,7 +133,7 @@ def transpose_collate_vision_wm(batch):
     collated_batch = default_collate(batch)
     transposed_batch = {}
 
-    fields = ["reset", "scene_obs", "frame"]
+    fields = ["reset", "robot_obs", "frame"]
     nested_fields = {
         "rgb_obs": ["rgb_static", "rgb_gripper"],
         # "state_info": ["robot_obs", "pre_robot_obs"],

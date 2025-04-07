@@ -204,7 +204,6 @@ class DreamerV2(WorldModel):
                 batch["vis"]["rgb_obs"]["rgb_gripper"],
                 batch["vis"]["robot_obs"],
                 batch["vis"]["actions"]["pre_actions"],
-                batch["vis"]["state_info"]["pre_robot_obs"],
                 batch["vis"]["reset"],
                 self.in_state,
             )
