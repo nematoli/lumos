@@ -50,7 +50,7 @@ def featurizer(cfg: DictConfig) -> None:
     if chk is None:
         raise ValueError("World model's checkpoint was not found.")
     else:
-        if cfg.world_model.name == "dreamer_v2":
+        if cfg.world_model.name == "dreamer_v2" or cfg.world_model.name == "dreamer_v2_vision":
             from lumos.world_models.dreamer_v2_vision import DreamerV2
 
             world_model = DreamerV2.load_from_checkpoint(chk.as_posix()).to(cfg.device)

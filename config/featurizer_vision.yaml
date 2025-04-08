@@ -1,0 +1,11 @@
+defaults:
+  - setup
+  - datamodule: vision_wm
+  - world_model: dreamer_v2_vision
+  # - _self_
+
+exp_dir: ${wm_chk_dir}
+# Vision only - Rot6D - MinMax - Small
+wm_chk_dir: "/home/lagandua/projects/lumos/logs/runs/2025-03-27/16-15-00/model_weights/500000.ckpt"
+output_file: "cached_feats_vision_small_seq50_500K.pkl"
+device: 0
