@@ -24,14 +24,14 @@ sys.path.insert(0, Path(__file__).absolute().parents[1].as_posix())
 logger = logging.getLogger(__name__)
 
 BZ = 10000
-EPOCH = 4
+EPOCH = 2
 
 
 def is_combined_loader(loader):
     return isinstance(loader, CombinedLoader)
 
 
-@hydra.main(version_base="1.3", config_path="../config", config_name="featurizer_hybrid")
+@hydra.main(version_base="1.3", config_path="../config", config_name="featurizer_vision_real")
 def featurizer(cfg: DictConfig) -> None:
     """
     This is called to calculate features for a dataset under a loaded world model
@@ -50,10 +50,10 @@ def featurizer(cfg: DictConfig) -> None:
     if chk is None:
         raise ValueError("World model's checkpoint was not found.")
     else:
-        if cfg.world_model.name == "dreamer_v2_hybrid2":
-            from lumos.world_models.dreamer_v2_hybrid2 import DreamerV2_Hybrid
+        if cfg.world_model.name == "dreamer_v2" or cfg.world_model.name == "dreamer_v2_vision":
+            from lumos.world_models.dreamer_v2_vision import DreamerV2
 
-            world_model = DreamerV2_Hybrid.load_from_checkpoint(chk.as_posix()).to(cfg.device)
+            world_model = DreamerV2.load_from_checkpoint(chk.as_posix()).to(cfg.device)
             world_model.eval()
         else:
             raise NotImplementedError(f"Unknown model: {cfg.world_model.name}")
@@ -65,7 +65,7 @@ def featurizer(cfg: DictConfig) -> None:
     cfg.datamodule.seq_len = 1  # Force T to be 1
     cfg.datamodule.batch_size = BZ
     cfg.datamodule.reset_prob = 0.0
-    cfg.datamodule.datasets.hybrid_dataset.num_workers = 2
+    cfg.datamodule.datasets.vision_dataset.num_workers = 2
     datamodule = hydra.utils.instantiate(cfg.datamodule)
     datamodule.setup()
 
@@ -73,7 +73,7 @@ def featurizer(cfg: DictConfig) -> None:
     extract_features(
         world_model,
         datamodule.train_dataloader(),
-        datamodule.train_datasets["hybrid"],
+        datamodule.train_datasets["vis"],
         cfg,
     )
 
@@ -81,7 +81,7 @@ def featurizer(cfg: DictConfig) -> None:
     extract_features(
         world_model,
         datamodule.val_dataloader(),
-        datamodule.val_datasets["hybrid"],
+        datamodule.val_datasets["vis"],
         cfg,
     )
 
@@ -118,16 +118,16 @@ def extract_features(world_model, data_loader, dataset, cfg):
         if combined:
             loader = tqdm(data_loader)
         else:
-            loader = tqdm(data_loader["hybrid"])
+            loader = tqdm(data_loader["vis"])
 
         for i, batch in enumerate(loader):
             if combined:
-                batch = batch["hybrid"]
+                batch = batch["vis"]
 
             features, out_state = world_model.infer_features(
                 batch["rgb_obs"]["rgb_static"],
                 batch["rgb_obs"]["rgb_gripper"],
-                batch["scene_obs"],
+                batch["robot_obs"],
                 batch["actions"]["pre_actions"],
                 batch["reset"],
                 in_state,
@@ -141,7 +141,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
                     world_model,
                     batch["rgb_obs"]["rgb_static"],
                     batch["rgb_obs"]["rgb_gripper"],
-                    batch["scene_obs"],
+                    batch["robot_obs"],
                 )
                 .cpu()
                 .numpy()
@@ -165,7 +165,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
         pickle.dump(data_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def obs_to_zero_feature(wm, rgb_s, rgb_g, scene_obs):
+def obs_to_zero_feature(wm, rgb_s, rgb_g, robot_obs):
     bz = rgb_s.size(1)
     zero_action = torch.zeros((1, bz, 7)).to(wm.device)
     zero_action[:, :, -1] = 1.0
@@ -174,7 +174,7 @@ def obs_to_zero_feature(wm, rgb_s, rgb_g, scene_obs):
     features, _ = wm.infer_features(
         rgb_s,
         rgb_g,
-        scene_obs,
+        robot_obs,
         zero_action,
         true_reset,
         wm.rssm_core.init_state(bz),

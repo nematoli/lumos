@@ -104,7 +104,7 @@ def transpose_collate_hybrid_wm(batch):
     collated_batch = default_collate(batch)
     transposed_batch = {}
 
-    fields = ["reset", "robot_obs", "frame"]
+    fields = ["reset", "state_obs", "frame"]
     nested_fields = {
         "rgb_obs": ["rgb_static", "rgb_gripper"],
         # "state_info": ["robot_obs", "pre_robot_obs"],

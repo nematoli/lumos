@@ -11,4 +11,4 @@ obs_space: ${datamodule.observation_space}
 pad: false
 for_wm: true
 lang_folder: ""
-num_workers: 20
+num_workers: 40
