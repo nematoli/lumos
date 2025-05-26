@@ -1,0 +1,7 @@
+# Configuration for Tensor Core precision settings
+# Options: 'highest', 'high', 'medium'
+# - highest: Maximum performance with slightly reduced precision (Ampere and newer)
+# - high: Good balance of performance and precision (Ampere and newer)
+# - medium: Better precision with some performance benefit (Volta/Turing and newer)
+tc_precision: "highest"  # Default to high for good balance
+tc_enabled: true      # Whether to use Tensor Cores if available 

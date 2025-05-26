@@ -1,0 +1,15 @@
+train:
+  rgb_static:
+    - _target_: lumos.utils.transforms.Identity
+  rgb_gripper:
+    - _target_: lumos.utils.transforms.Identity
+  robot_obs:
+    - _target_: lumos.utils.transforms.Identity
+
+val:
+  rgb_static:
+    - _target_: lumos.utils.transforms.Identity
+  rgb_gripper:
+    - _target_: lumos.utils.transforms.Identity
+  robot_obs:
+    - _target_: lumos.utils.transforms.Identity

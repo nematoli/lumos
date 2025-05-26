@@ -1,0 +1,7 @@
+defaults:
+  - wm_disk_dataset: base
+
+wm_disk_dataset:
+  # Ignores "actions", "rgb-X" keys
+  _target_: lumos.datasets.state_wm_disk_dataset.StateWMDiskDataset
+  key: "state"

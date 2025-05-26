@@ -1,0 +1,6 @@
+_target_: lumos.world_models.encoders.mlp_encoder.MLPEncoder
+robot_dim: 18
+scene_dim: 33
+output_dim: 512
+mlp_layers: [400]
+activation: elu

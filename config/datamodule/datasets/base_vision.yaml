@@ -1,0 +1,7 @@
+defaults:
+  - wm_disk_dataset: base
+
+
+wm_disk_dataset:
+  # Ignores "actions" and "scene_obs" keys
+  _target_: lumos.datasets.vision_wm_disk_dataset.VisionWMDiskDataset

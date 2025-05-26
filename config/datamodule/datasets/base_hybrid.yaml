@@ -1,0 +1,7 @@
+defaults:
+  - wm_disk_dataset: base
+
+wm_disk_dataset:
+  # Ignores "actions" key
+  _target_: lumos.datasets.hybrid_wm_disk_dataset.HybridWMDiskDataset
+  key: "hybrid"

@@ -1,0 +1,5 @@
+defaults:
+  - cell: default
+
+_target_: lumos.world_models.rssm.core.RSSMCore
+_recursive_: false

@@ -1,0 +1,16 @@
+defaults:
+  - encoder: cnn_encoder
+  - decoder: cnn_decoder
+  - rssm: default
+  - amp: default
+  - optimizer: adamw
+  - loss: default
+
+_target_: lumos.world_models.dreamer_v2.DreamerV2
+_recursive_: false
+use_gripper_camera: ${datamodule.use_gripper_camera}
+
+name: dreamer_v2
+train_batch_size: ${datamodule.train_batch_size}
+val_batch_size: ${datamodule.val_batch_size}
+with_proprio: true

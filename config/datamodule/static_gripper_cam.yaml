@@ -1,0 +1,5 @@
+defaults:
+  - setup
+  - observation_space: rgb_static_gripper_rel_act
+
+use_gripper_camera: true

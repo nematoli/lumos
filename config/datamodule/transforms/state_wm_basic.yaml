@@ -1,0 +1,12 @@
+train:
+  robot_obs:
+    - _target_: lumos.utils.transforms.NormalizeVector
+  scene_obs:
+    - _target_: lumos.utils.transforms.NormalizeVector
+
+
+val:
+  robot_obs:
+    - _target_: lumos.utils.transforms.NormalizeVector
+  scene_obs:
+    - _target_: lumos.utils.transforms.NormalizeVector

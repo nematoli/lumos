@@ -1,0 +1,6 @@
+_target_: lumos.utils.samplers.EquiSampler
+_recursive_: false
+
+data_size: ???
+seq_len: ${datamodule.seq_len}
+init_idx: null
