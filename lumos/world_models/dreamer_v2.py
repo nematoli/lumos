@@ -36,8 +36,8 @@ class DreamerV2(WorldModel):
         train_batch_size: int,
         val_batch_size: int,
         with_proprio: bool,
-        # gripper_control: bool,
         use_gripper_camera: bool,
+        robot_dim: int,
         name: str,
     ):
         super(DreamerV2, self).__init__(name=name)
@@ -50,7 +50,7 @@ class DreamerV2(WorldModel):
         rssm.cell.embed_dim = encoder.cnn_depth * 32
         self.with_proprio = with_proprio
         if self.with_proprio:
-            rssm.cell.embed_dim += 18
+            rssm.cell.embed_dim += robot_dim
         self.rssm_core = hydra.utils.instantiate(rssm)
         self.autocast = hydra.utils.instantiate(amp.autocast)
         self.scaler = hydra.utils.instantiate(amp.scaler)

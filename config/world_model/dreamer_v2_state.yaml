@@ -1,9 +1,7 @@
 defaults:
-  - dreamer_v2
+  - base
   - override encoder: mlp_encoder
   - override decoder: mlp_decoder
 
 _target_: lumos.world_models.dreamer_v2_state.DreamerV2
 name: dreamer_v2_state
-use_gripper_camera: null
-with_proprio: null

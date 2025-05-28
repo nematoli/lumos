@@ -1,5 +1,5 @@
 defaults:
-  - dreamer_v2
+  - base
   - override encoder: cnn_mlp_encoder
   - override decoder: cnn_mlp_decoder
   - override loss: hybrid_wm
@@ -7,4 +7,4 @@ defaults:
 _target_: lumos.world_models.dreamer_v2_hybrid.DreamerV2
 name: dreamer_v2_hybrid
 use_gripper_camera: ${datamodule.use_gripper_camera}
-with_proprio: null
+

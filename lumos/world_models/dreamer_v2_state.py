@@ -35,9 +35,6 @@ class DreamerV2(WorldModel):
         loss: DictConfig,
         train_batch_size: int,
         val_batch_size: int,
-        with_proprio: bool,  # unused
-        # gripper_control: bool,
-        use_gripper_camera: bool,  # unused
         name: str,
     ):
         super(DreamerV2, self).__init__(name=name)
