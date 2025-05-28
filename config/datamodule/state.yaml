@@ -1,22 +1,8 @@
 defaults:
-  - datasets: base_state
-  - transforms: state_wm_minmax
-  - proprioception_dims: robot_scene_rot6d
-  - batch_sampler: equidistant
-  - observation_space: state_rel_act
+  - base
+  - override datasets: base_state
+  - override transforms: state_wm_minmax
+  - override proprioception_dims: robot_scene_rot6d
+  - override observation_space: state_rel_act
 
-_target_: lumos.datasets.base_data_module.BaseDataModule
-_recursive_: false
 root_data_dir: ${root}/dataset/calvin/task_D_D_state_rot6d/
-action_space: 7
-action_max: [1., 1., 1., 1., 1., 1., 1.,]
-action_min: [-1., -1., -1., -1., -1., -1., -1]
-shuffle_val: false
-load_feats: false
-use_cached_data: true
-
-reset_prob: 0.01
-train_batch_size: 50
-val_batch_size: 50
-seq_len: 50
-use_gripper_camera: false

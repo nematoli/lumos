@@ -1,15 +1,10 @@
 defaults:
-  - encoder: cnn_mlp_encoder
-  - decoder: cnn_mlp_decoder
-  - rssm: default
-  - amp: default
-  - optimizer: adamw
-  - loss: hybrid_wm
+  - dreamer_v2
+  - override encoder: cnn_mlp_encoder
+  - override decoder: cnn_mlp_decoder
+  - override loss: hybrid_wm
 
 _target_: lumos.world_models.dreamer_v2_hybrid.DreamerV2
-_recursive_: false
-use_gripper_camera: ${datamodule.use_gripper_camera}
-
 name: dreamer_v2_hybrid
-train_batch_size: ${datamodule.train_batch_size}
-val_batch_size: ${datamodule.val_batch_size}
+use_gripper_camera: ${datamodule.use_gripper_camera}
+with_proprio: null

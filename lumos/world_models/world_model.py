@@ -205,4 +205,6 @@ class WorldModel(pl.LightningModule):
             img6 = wandb.Image(rgb_gripper_pred, caption="pred_g")
             images.extend([img4, img5, img6])
 
-        self.logger.experiment.log({f"imgs/{mode}": images})
+        if "wandb" in self.logger.__class__.__name__.lower():
+            # Log images to wandb
+            self.logger.experiment.log({f"imgs/{mode}": images})

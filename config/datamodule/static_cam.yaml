@@ -1,5 +1,6 @@
 defaults:
-  - setup
-  - observation_space: rgb_static_rel_act
+  - base
+  - override transforms: wm_minmax
+  - override observation_space: rgb_static_rel_act
 
 use_gripper_camera: false

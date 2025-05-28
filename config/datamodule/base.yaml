@@ -1,8 +1,9 @@
 defaults:
   - datasets: base_vision
-  - transforms: wm_minmax
+  - transforms: wm_base
   - proprioception_dims: robot_full_rot6d
   - batch_sampler: equidistant
+  - observation_space: rgb_static_gripper_rel_act
 
 _target_: lumos.datasets.base_data_module.BaseDataModule
 _recursive_: false
