@@ -1,0 +1,36 @@
+train:
+  rgb_static:
+    - _target_: lumos.utils.transforms.ScaleImageTensor
+    - _target_: torchvision.transforms.Normalize
+      mean: [0.5,]
+      std: [0.5,]
+  rgb_gripper:
+    - _target_: lumos.utils.transforms.ScaleImageTensor
+    - _target_: torchvision.transforms.Normalize
+      mean: [0.5,]
+      std: [0.5,]
+  out_rgb:
+    - _target_: lumos.utils.transforms.UnNormalizeImageTensor
+      mean: [0.5,]
+      std: [0.5,]
+  robot_obs:
+    - _target_: lumos.utils.transforms.NormalizeVectorMinMax
+
+
+val:
+  rgb_static:
+    - _target_: lumos.utils.transforms.ScaleImageTensor
+    - _target_: torchvision.transforms.Normalize
+      mean: [0.5,]
+      std: [0.5,]
+  rgb_gripper:
+    - _target_: lumos.utils.transforms.ScaleImageTensor
+    - _target_: torchvision.transforms.Normalize
+      mean: [0.5,]
+      std: [0.5,]
+  out_rgb:
+    - _target_: lumos.utils.transforms.UnNormalizeImageTensor
+      mean: [0.5,]
+      std: [0.5,]
+  robot_obs:
+    - _target_: lumos.utils.transforms.NormalizeVectorMinMax

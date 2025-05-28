@@ -1,12 +1,12 @@
 defaults:
   - datasets: base_vision
-  - transforms: wm_basic
-  - proprioception_dims: robot_full
+  - transforms: wm_minmax
+  - proprioception_dims: robot_full_rot6d
   - batch_sampler: equidistant
 
 _target_: lumos.datasets.base_data_module.BaseDataModule
 _recursive_: false
-root_data_dir: ${root}/dataset/calvin/64_task_D_D
+root_data_dir: ${root}/dataset/calvin/task_D_D_rgb64_rot6d
 action_space: 7
 action_max: [1., 1., 1., 1., 1., 1., 1.,]
 action_min: [-1., -1., -1., -1., -1., -1., -1]

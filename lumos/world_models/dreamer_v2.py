@@ -50,7 +50,7 @@ class DreamerV2(WorldModel):
         rssm.cell.embed_dim = encoder.cnn_depth * 32
         self.with_proprio = with_proprio
         if self.with_proprio:
-            rssm.cell.embed_dim += 15
+            rssm.cell.embed_dim += 18
         self.rssm_core = hydra.utils.instantiate(rssm)
         self.autocast = hydra.utils.instantiate(amp.autocast)
         self.scaler = hydra.utils.instantiate(amp.scaler)
