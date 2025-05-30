@@ -1,0 +1,7 @@
+_target_: lumos.world_models.encoders.cnn_encoder.CnnEncoder
+cnn_depth: 12
+kernels: [4, 4, 4, 4, 4, 4]
+strides: [2, 2, 2, 2, 2, 2]
+paddings: [0, 0, 0, 0, 1, 0]
+activation: elu
+use_gripper_camera: ${world_model.use_gripper_camera}

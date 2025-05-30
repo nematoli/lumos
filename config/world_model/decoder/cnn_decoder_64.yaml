@@ -1,0 +1,11 @@
+_target_: lumos.world_models.decoders.cnn_decoder.CnnDecoder
+in_dim: ???
+cnn_depth: ${world_model.encoder.cnn_depth}
+kernels: [5, 5, 6, 6]
+strides: [2, 2, 2, 2]
+paddings: [0, 0, 0, 0]
+out_channels: [192, 96, 48, 3]
+layer_norm: true
+activation: elu
+mlp_layers: 0
+use_gripper_camera: ${world_model.use_gripper_camera}

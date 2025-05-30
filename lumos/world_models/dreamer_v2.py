@@ -47,7 +47,7 @@ class DreamerV2(WorldModel):
         decoder.in_dim = rssm.cell.deter_dim + rssm.cell.stoch_dim * rssm.cell.stoch_rank
         decoder.use_gripper_camera = self.use_gripper_camera
         self.decoder = hydra.utils.instantiate(decoder)
-        rssm.cell.embed_dim = encoder.cnn_depth * 32
+        rssm.cell.embed_dim = encoder.cnn_depth * (2 ** (len(encoder.kernels) + 1))
         self.with_proprio = with_proprio
         if self.with_proprio:
             rssm.cell.embed_dim += robot_dim
@@ -254,7 +254,7 @@ class DreamerV2(WorldModel):
     def on_validation_epoch_end(self) -> None:
         for key in self.running_metrics.keys():
             self.running_metrics[key] /= self.num_val_batches
-        self.log_metrics(self.running_metrics, mode="val")
+        self.log_metrics(self.running_metrics, mode="val", sync_dist=True)
         pred_img_s, pred_img_g = self.pred_img(*self.val_samples)
 
         pred_img_g_val = None

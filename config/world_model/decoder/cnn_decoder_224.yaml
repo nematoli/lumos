@@ -1,8 +1,10 @@
 _target_: lumos.world_models.decoders.cnn_decoder.CnnDecoder
 in_dim: ???
-cnn_depth: ${world_model.encoder.cnn_depth}
-kernels: [5, 5, 6, 6]
-stride: 2
+cnn_depth: 12
+kernels: [7, 4, 4, 4, 4, 4]
+strides: [1, 2, 2, 2, 2, 2]
+paddings: [0, 1, 1, 1, 1, 1]
+out_channels: [192, 96, 96, 48, 48, 3]
 layer_norm: true
 activation: elu
 mlp_layers: 0
