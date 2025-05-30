@@ -1,0 +1,3 @@
+defaults:
+  - checkpoint: last
+  - sampler: set_epoch

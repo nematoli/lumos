@@ -1,6 +1,10 @@
-_target_: lumos.utils.samplers.EquiBatchSampler
+_target_: lumos.utils.samplers.EquiDistributedSampler
 _recursive_: false
 
 data_size: ???
 seq_len: ${datamodule.seq_len}
+global_batch_size: ???
+num_replicas: null
+rank: null
 init_idx: null
+drop_last: false

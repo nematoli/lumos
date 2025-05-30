@@ -1,0 +1,8 @@
+_target_: pytorch_lightning.callbacks.ModelCheckpoint
+dirpath: saved_models              # output folder
+filename: "{epoch}"  # name includes val loss for clarity
+save_last: True                   # always keep the most recent
+save_top_k: 1                     # keep only the best model
+monitor: loss/val-total              # metric to monitor
+mode: min                        # lower is better
+verbose: True

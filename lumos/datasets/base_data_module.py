@@ -7,6 +7,7 @@ import hydra
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
 import pytorch_lightning as pl
+import torch.distributed as dist
 from torch.utils.data import DataLoader
 import torchvision
 
@@ -61,6 +62,14 @@ class BaseDataModule(pl.LightningDataModule):
         elif self.datasets_cfg.wm_disk_dataset.key == "state":
             self.collate_fn = transpose_collate_state_wm
 
+    def _compute_batch_params(self):
+        """Return (num_replicas, global_batch_size)."""
+        if dist.is_initialized():
+            world_size = dist.get_world_size()
+        else:
+            world_size = 1
+        return world_size, self.train_batch_size * world_size, self.val_batch_size * world_size
+
     def prepare_data(self, *args, **kwargs):
         # check if files already exist
         dataset_exist = np.any([len(list(self.training_dir.glob(extension))) for extension in ["*.npz", "*.pkl"]])
@@ -109,6 +118,8 @@ class BaseDataModule(pl.LightningDataModule):
             self.modalities.append(key)
 
     def train_dataloader(self):
+        num_replicas, global_train_batch_size, global_val_batch_size = self._compute_batch_params()
+
         if self.load_feats:
             collate = transpose_collate_ag
         else:
@@ -131,22 +142,29 @@ class BaseDataModule(pl.LightningDataModule):
                 dataset_length = len(dataset)
                 print(f"Dataset '{key}' has {dataset_length} items.")  # Or use another form of logging if preferred
 
-                self.batch_sampler.data_size = dataset_length
-                self.batch_sampler.batch_size = self.train_batch_size
+                if num_replicas > 1:
+                    self.batch_sampler.data_size = dataset_length
+                    self.batch_sampler.global_batch_size = global_train_batch_size
+                    self.batch_sampler.num_replicas = num_replicas
+                else:
+                    self.batch_sampler.data_size = dataset_length
+                    self.batch_sampler.batch_size = self.train_batch_size
                 batch_sampler = hydra.utils.instantiate(self.batch_sampler)
 
                 dataloader = DataLoader(
                     dataset,
                     batch_sampler=batch_sampler,
                     num_workers=dataset.num_workers,
-                    pin_memory=False,
+                    pin_memory=True,
                     collate_fn=collate,
-                    persistent_workers=False,
+                    persistent_workers=True,
                 )
                 dataloaders[key] = dataloader
             return dataloaders
 
     def val_dataloader(self):
+        num_replicas, global_train_batch_size, global_val_batch_size = self._compute_batch_params()
+
         if self.load_feats:
             collate = transpose_collate_ag
         else:
@@ -157,10 +175,10 @@ class BaseDataModule(pl.LightningDataModule):
                     dataset,
                     batch_size=self.val_batch_size,
                     num_workers=dataset.num_workers,
-                    pin_memory=False,
+                    pin_memory=True,
                     shuffle=self.shuffle_val,
                     collate_fn=collate,
-                    persistent_workers=False,
+                    persistent_workers=True,
                 )
                 for key, dataset in self.val_datasets.items()
             }
@@ -170,8 +188,13 @@ class BaseDataModule(pl.LightningDataModule):
                 dataset_length = len(dataset)
                 print(f"Dataset '{key}' has {dataset_length} items.")  # Or use another form of logging if preferred
 
-                self.batch_sampler.data_size = dataset_length
-                self.batch_sampler.batch_size = self.val_batch_size
+                if num_replicas > 1:
+                    self.batch_sampler.data_size = dataset_length
+                    self.batch_sampler.global_batch_size = global_val_batch_size
+                    self.batch_sampler.num_replicas = num_replicas
+                else:
+                    self.batch_sampler.data_size = dataset_length
+                    self.batch_sampler.batch_size = self.val_batch_size
                 batch_sampler = hydra.utils.instantiate(self.batch_sampler)
 
                 dataloader = DataLoader(
