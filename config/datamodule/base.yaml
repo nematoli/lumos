@@ -1,6 +1,6 @@
 defaults:
   - datasets: base_vision
-  - transforms: wm_base
+  - transforms: wm_basic
   - proprioception_dims: robot_full_rot6d
   - batch_sampler: equidistant
   - observation_space: rgb_static_gripper_rel_act
