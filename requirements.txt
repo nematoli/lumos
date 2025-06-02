@@ -11,3 +11,4 @@ opencv-python
 tqdm
 wandb
 pyhash
+timm==0.9.10
