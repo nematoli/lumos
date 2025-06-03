@@ -30,7 +30,7 @@ def is_combined_loader(loader):
     return isinstance(loader, CombinedLoader)
 
 
-@hydra.main(version_base="1.3", config_path="../config", config_name="featurizer")
+@hydra.main(version_base="1.3", config_path="../config", config_name="featurizer_state")
 def featurizer(cfg: DictConfig) -> None:
     """
     This is called to calculate features for a dataset under a loaded world model
@@ -47,10 +47,10 @@ def featurizer(cfg: DictConfig) -> None:
     seed_everything(cfg.seed, workers=True)
 
     if chk is None:
-        raise ValueError("World model's checkpoint was not found.")
+        raise ValueError("State world model's checkpoint was not found.")
     else:
-        if cfg.world_model.name == "dreamer_v2":
-            from lumos.world_models.dreamer_v2 import DreamerV2
+        if cfg.world_model.name == "dreamer_v2_state":
+            from lumos.world_models.dreamer_v2_state import DreamerV2
 
             world_model = DreamerV2.load_from_checkpoint(chk.as_posix()).to(cfg.device)
             world_model.eval()
@@ -73,7 +73,7 @@ def featurizer(cfg: DictConfig) -> None:
     extract_features(
         world_model,
         datamodule.train_dataloader(),
-        datamodule.train_datasets["vis"],
+        datamodule.train_datasets["state"],
         cfg,
     )
 
@@ -81,7 +81,7 @@ def featurizer(cfg: DictConfig) -> None:
     extract_features(
         world_model,
         datamodule.val_dataloader(),
-        datamodule.val_datasets["vis"],
+        datamodule.val_datasets["state"],
         cfg,
     )
 
@@ -102,7 +102,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
     rel_acts = np.zeros((len(dataset), cfg.datamodule.action_space), dtype=np.float32)
     resets = np.zeros((len(dataset), 1), dtype=bool)
     frames = np.zeros((len(dataset), 1), dtype=int)
-    robot_obs = np.zeros((len(dataset), 18), dtype=np.float32)
+    state_obs = np.zeros((len(dataset), 51), dtype=np.float32)
 
     data_dict = {}
 
@@ -118,20 +118,17 @@ def extract_features(world_model, data_loader, dataset, cfg):
         if combined:
             loader = tqdm(data_loader)
         else:
-            loader = tqdm(data_loader["vis"])
+            loader = tqdm(data_loader["state"])
 
         for i, batch in enumerate(loader):
             if combined:
-                batch = batch["vis"]
+                batch = batch["state"]
 
             features, out_state = world_model.infer_features(
-                batch["rgb_obs"]["rgb_static"],
-                batch["robot_obs"],
+                batch["state_obs"],
                 batch["actions"]["pre_actions"],
-                batch["state_info"]["pre_robot_obs"],
                 batch["reset"],
                 in_state,
-                batch["rgb_obs"]["rgb_gripper"],
             )
             in_state = out_state
 
@@ -140,10 +137,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
             zfeats[idxs] = (
                 obs_to_zero_feature(
                     world_model,
-                    batch["rgb_obs"]["rgb_static"],
-                    batch["rgb_obs"]["rgb_gripper"],
-                    batch["robot_obs"],
-                    batch["state_info"]["pre_robot_obs"],
+                    batch["state_obs"],
                 )
                 .cpu()
                 .numpy()
@@ -152,7 +146,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
             rel_acts[idxs] = batch["actions"]["rel_actions"].cpu().numpy().squeeze(0)
             resets[idxs] = batch["reset"].cpu().numpy().squeeze(0)
             frames[idxs] = batch["frame"].cpu().numpy().squeeze(0)
-            robot_obs[idxs] = batch["state_info"]["robot_obs"].cpu().numpy().squeeze(0)
+            state_obs[idxs] = batch["state_obs"].cpu().numpy().squeeze(0)
 
             for idx in idxs:
                 data_dict[int(frames[idx])] = {
@@ -160,7 +154,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
                     "zero_features": zfeats[idx],
                     "rel_actions": rel_acts[idx],
                     "reset": resets[idx],
-                    "robot_obs": robot_obs[idx],
+                    "state_obs": state_obs[idx],
                 }
 
     cached_feats_path = dataset.abs_datasets_dir / cfg.output_file
@@ -168,20 +162,20 @@ def extract_features(world_model, data_loader, dataset, cfg):
         pickle.dump(data_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def obs_to_zero_feature(wm, rgb_s, rgb_g, proprio, robot_obs):
-    bz = rgb_s.size(1)
+def obs_to_zero_feature(
+    wm,
+    state_obs,
+):
+    bz = state_obs.size(1)
     zero_action = torch.zeros((1, bz, 7)).to(wm.device)
     zero_action[:, :, -1] = 1.0
     true_reset = torch.ones((1, bz, 1), dtype=torch.bool).to(wm.device)
 
     features, _ = wm.infer_features(
-        rgb_s,
-        proprio,
+        state_obs,
         zero_action,
-        robot_obs,
         true_reset,
         wm.rssm_core.init_state(bz),
-        rgb_g,
     )
     return features
 
