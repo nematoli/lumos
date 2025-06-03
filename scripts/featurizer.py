@@ -128,7 +128,6 @@ def extract_features(world_model, data_loader, dataset, cfg):
                 batch["rgb_obs"]["rgb_static"],
                 batch["robot_obs"],
                 batch["actions"]["pre_actions"],
-                batch["state_info"]["pre_robot_obs"],
                 batch["reset"],
                 in_state,
                 batch["rgb_obs"]["rgb_gripper"],
@@ -143,7 +142,6 @@ def extract_features(world_model, data_loader, dataset, cfg):
                     batch["rgb_obs"]["rgb_static"],
                     batch["rgb_obs"]["rgb_gripper"],
                     batch["robot_obs"],
-                    batch["state_info"]["pre_robot_obs"],
                 )
                 .cpu()
                 .numpy()
@@ -168,7 +166,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
         pickle.dump(data_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def obs_to_zero_feature(wm, rgb_s, rgb_g, proprio, robot_obs):
+def obs_to_zero_feature(wm, rgb_s, rgb_g, proprio):
     bz = rgb_s.size(1)
     zero_action = torch.zeros((1, bz, 7)).to(wm.device)
     zero_action[:, :, -1] = 1.0
@@ -178,7 +176,6 @@ def obs_to_zero_feature(wm, rgb_s, rgb_g, proprio, robot_obs):
         rgb_s,
         proprio,
         zero_action,
-        robot_obs,
         true_reset,
         wm.rssm_core.init_state(bz),
         rgb_g,

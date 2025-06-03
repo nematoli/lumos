@@ -89,7 +89,6 @@ class DreamerV2(WorldModel):
         rgb_s: Tensor,
         proprio: Tensor,
         act: Tensor,
-        robot_obs: Tensor,
         reset: Tensor,
         in_state: Tensor,
         rgb_g: Tensor = None,
@@ -119,7 +118,6 @@ class DreamerV2(WorldModel):
         rgb_s: Tensor,
         proprio: Tensor,
         actions: Tensor,
-        robot_obs: Tensor,
         reset: Tensor,
         in_state: Tensor,
         rgb_g: Tensor = None,
@@ -131,14 +129,12 @@ class DreamerV2(WorldModel):
             rgb_g_dev = rgb_g.to(self.device) if rgb_g is not None else None
             proprio_dev = proprio.to(self.device)
             actions_dev = actions.to(self.device)
-            robot_obs_dev = robot_obs.to(self.device)
             reset_dev = reset.to(self.device)
 
             outs = self(
                 rgb_s_dev,
                 proprio_dev,
                 actions_dev,
-                robot_obs_dev,
                 reset_dev,
                 in_state,
                 rgb_g=rgb_g_dev,
@@ -175,7 +171,6 @@ class DreamerV2(WorldModel):
                 batch["rgb_obs"]["rgb_static"],
                 batch["robot_obs"],
                 batch["actions"]["pre_actions"],
-                batch["state_info"]["pre_robot_obs"],
                 batch["reset"],
                 self.in_state,
                 rgb_g=rgb_g_input,
@@ -225,7 +220,6 @@ class DreamerV2(WorldModel):
                 batch["rgb_obs"]["rgb_static"],
                 batch["robot_obs"],
                 batch["actions"]["pre_actions"],
-                batch["state_info"]["pre_robot_obs"],
                 batch["reset"],
                 self.in_state,
                 rgb_g=rgb_g_input,
