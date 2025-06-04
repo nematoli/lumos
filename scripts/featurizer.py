@@ -102,7 +102,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
     rel_acts = np.zeros((len(dataset), cfg.datamodule.action_space), dtype=np.float32)
     resets = np.zeros((len(dataset), 1), dtype=bool)
     frames = np.zeros((len(dataset), 1), dtype=int)
-    robot_obs = np.zeros((len(dataset), 18), dtype=np.float32)
+    robot_obs = np.zeros((len(dataset), cfg.world_model.robot_dim), dtype=np.float32)
 
     data_dict = {}
 
@@ -150,7 +150,7 @@ def extract_features(world_model, data_loader, dataset, cfg):
             rel_acts[idxs] = batch["actions"]["rel_actions"].cpu().numpy().squeeze(0)
             resets[idxs] = batch["reset"].cpu().numpy().squeeze(0)
             frames[idxs] = batch["frame"].cpu().numpy().squeeze(0)
-            robot_obs[idxs] = batch["state_info"]["robot_obs"].cpu().numpy().squeeze(0)
+            robot_obs[idxs] = batch["robot_obs"].cpu().numpy().squeeze(0)
 
             for idx in idxs:
                 data_dict[int(frames[idx])] = {
