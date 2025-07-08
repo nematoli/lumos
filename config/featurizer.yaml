@@ -5,3 +5,5 @@ defaults:
   - _self_
 
 exp_dir: ${wm_chk_dir}
+output_file: "visionwm_features.pkl"
+device: 0

@@ -8,8 +8,7 @@ import hydra
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import seed_everything
-from pytorch_lightning.trainer.supporters import CombinedLoader
-from pytorch_lightning.utilities import rank_zero_only
+from pytorch_lightning.utilities import CombinedLoader, rank_zero_only
 import torch
 from tqdm import tqdm
 
@@ -63,9 +62,10 @@ def featurizer(cfg: DictConfig) -> None:
 
     cfg.datamodule.batch_sampler.init_idx = 0
     cfg.datamodule.seq_len = 1  # Force T to be 1
-    cfg.datamodule.batch_size = BZ
+    cfg.datamodule.train_batch_size = BZ
+    cfg.datamodule.val_batch_size = BZ
     cfg.datamodule.reset_prob = 0.0
-    cfg.datamodule.datasets.vision_dataset.num_workers = 2
+    cfg.datamodule.datasets.wm_disk_dataset.num_workers = 2
     datamodule = hydra.utils.instantiate(cfg.datamodule)
     datamodule.setup()
 
@@ -96,25 +96,19 @@ def extract_features(world_model, data_loader, dataset, cfg):
         cfg: The configuration for the extraction
     """
 
-    dim_features = world_model.decoder.in_dim  # * 2
-    # dim_features = (
-    #     cfg.world_model.rssm.cell.deter_dim
-    #     + cfg.world_model.rssm.cell.stoch_dim * cfg.world_model.rssm.cell.stoch_rank
-    #     # + 64  # 1024
-    # )
+    dim_features = world_model.decoder.in_dim
     feats = np.zeros((len(dataset), dim_features), dtype=np.float32)
     zfeats = np.zeros((len(dataset), dim_features), dtype=np.float32)
     rel_acts = np.zeros((len(dataset), cfg.datamodule.action_space), dtype=np.float32)
     resets = np.zeros((len(dataset), 1), dtype=bool)
     frames = np.zeros((len(dataset), 1), dtype=int)
-    robot_obs = np.zeros((len(dataset), 15), dtype=np.float32)
-    scene_obs = np.zeros((len(dataset), 24), dtype=np.float32)
+    robot_obs = np.zeros((len(dataset), cfg.world_model.robot_dim), dtype=np.float32)
 
     data_dict = {}
 
     for epoch in range(EPOCH):
         if epoch == 0:
-            in_state = world_model.rssm_core.init_state(cfg.datamodule.batch_size)
+            in_state = world_model.rssm_core.init_state(cfg.datamodule.train_batch_size)
         else:
             in_state = [torch.roll(x, 1, 0) for x in in_state]
             in_state[0][0] = torch.zeros_like(in_state[0][0])
@@ -132,12 +126,11 @@ def extract_features(world_model, data_loader, dataset, cfg):
 
             features, out_state = world_model.infer_features(
                 batch["rgb_obs"]["rgb_static"],
-                batch["rgb_obs"]["rgb_gripper"],
                 batch["robot_obs"],
                 batch["actions"]["pre_actions"],
-                batch["state_info"]["pre_robot_obs"],
                 batch["reset"],
                 in_state,
+                batch["rgb_obs"]["rgb_gripper"],
             )
             in_state = out_state
 
@@ -149,7 +142,6 @@ def extract_features(world_model, data_loader, dataset, cfg):
                     batch["rgb_obs"]["rgb_static"],
                     batch["rgb_obs"]["rgb_gripper"],
                     batch["robot_obs"],
-                    batch["state_info"]["pre_robot_obs"],
                 )
                 .cpu()
                 .numpy()
@@ -159,7 +151,6 @@ def extract_features(world_model, data_loader, dataset, cfg):
             resets[idxs] = batch["reset"].cpu().numpy().squeeze(0)
             frames[idxs] = batch["frame"].cpu().numpy().squeeze(0)
             robot_obs[idxs] = batch["state_info"]["robot_obs"].cpu().numpy().squeeze(0)
-            # scene_obs[idxs] = batch["state_info"]["scene_obs"].cpu().numpy().squeeze(0)
 
             for idx in idxs:
                 data_dict[int(frames[idx])] = {
@@ -168,16 +159,14 @@ def extract_features(world_model, data_loader, dataset, cfg):
                     "rel_actions": rel_acts[idx],
                     "reset": resets[idx],
                     "robot_obs": robot_obs[idx],
-                    # "scene_obs": scene_obs[idx],
                 }
 
-    cached_feats_path = dataset.abs_datasets_dir / "cached_feats.pkl"
+    cached_feats_path = dataset.abs_datasets_dir / cfg.output_file
     with open(str(cached_feats_path), "wb") as f:
-        # pickle.dump(data_dict, f)
         pickle.dump(data_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def obs_to_zero_feature(wm, rgb_s, rgb_g, proprio, robot_obs):
+def obs_to_zero_feature(wm, rgb_s, rgb_g, proprio):
     bz = rgb_s.size(1)
     zero_action = torch.zeros((1, bz, 7)).to(wm.device)
     zero_action[:, :, -1] = 1.0
@@ -185,12 +174,11 @@ def obs_to_zero_feature(wm, rgb_s, rgb_g, proprio, robot_obs):
 
     features, _ = wm.infer_features(
         rgb_s,
-        rgb_g,
         proprio,
         zero_action,
-        robot_obs,
         true_reset,
         wm.rssm_core.init_state(bz),
+        rgb_g,
     )
     return features
 
