@@ -170,8 +170,7 @@ def get_state_info_dict(episode: Dict[str, np.ndarray], for_wm: bool) -> Dict[st
             # "scene_obs": torch.from_numpy(episode["scene_obs"]),
         }
     }
-    if for_wm:
-        info["state_info"]["pre_robot_obs"] = torch.from_numpy(episode["pre_robot_obs"])
+
     return info
 
 

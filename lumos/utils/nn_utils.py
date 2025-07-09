@@ -50,7 +50,7 @@ def transpose_collate_wm(batch):
     fields = ["reset", "robot_obs", "frame"]
     nested_fields = {
         "rgb_obs": ["rgb_static", "rgb_gripper"],
-        "state_info": ["robot_obs", "pre_robot_obs"],
+        "state_info": ["robot_obs"],
         "actions": ["rel_actions", "pre_actions"],
     }
 
@@ -79,7 +79,7 @@ def transpose_collate_hybrid_wm(batch):
     fields = ["reset", "state_obs", "frame"]
     nested_fields = {
         "rgb_obs": ["rgb_static", "rgb_gripper"],
-        "state_info": ["robot_obs", "pre_robot_obs"],
+        "state_info": ["robot_obs"],
         "actions": ["rel_actions", "pre_actions"],
     }
 
@@ -107,7 +107,7 @@ def transpose_collate_state_wm(batch):
 
     fields = ["reset", "state_obs", "frame"]
     nested_fields = {
-        "state_info": ["robot_obs", "pre_robot_obs"],
+        "state_info": ["robot_obs"],
         "actions": ["rel_actions", "pre_actions"],
     }
 
