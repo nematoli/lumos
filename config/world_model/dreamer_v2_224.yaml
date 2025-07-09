@@ -4,5 +4,5 @@ defaults:
   - override decoder: cnn_decoder_224
 
 use_gripper_camera: ${datamodule.use_gripper_camera}
-with_proprio: true
+with_proprio: false
 robot_dim: ${datamodule.proprioception_dims.n_state_obs}

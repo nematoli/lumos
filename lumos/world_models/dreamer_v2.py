@@ -29,6 +29,7 @@ class DreamerV2(WorldModel):
         self,
         encoder: DictConfig,
         decoder: DictConfig,
+        inv_dyna: DictConfig,
         rssm: DictConfig,
         amp: DictConfig,
         optimizer: DictConfig,
@@ -52,6 +53,10 @@ class DreamerV2(WorldModel):
         if self.with_proprio:
             rssm.cell.embed_dim += robot_dim
         self.rssm_core = hydra.utils.instantiate(rssm)
+
+        inv_dyna.in_dim = 2 * rssm.cell.embed_dim
+        self.inv_dyna = hydra.utils.instantiate(inv_dyna)
+
         self.autocast = hydra.utils.instantiate(amp.autocast)
         self.scaler = hydra.utils.instantiate(amp.scaler)
         self.optimizer = optimizer
@@ -61,6 +66,7 @@ class DreamerV2(WorldModel):
         self.kl_balance = loss.kl_balance
         self.kl_weight = loss.kl_weight
         self.image_weight = loss.image_weight
+        self.act_weight = loss.act_weight
         self.grad_clip = loss.grad_clip
 
         self.automatic_optimization = False
@@ -71,6 +77,7 @@ class DreamerV2(WorldModel):
             "loss_kl",
             "loss_kl-post",
             "loss_kl-prior",
+            "loss_act",
             "entropy_prior",
             "entropy_post",
         ]
@@ -87,17 +94,21 @@ class DreamerV2(WorldModel):
     def forward(
         self,
         rgb_s: Tensor,
-        proprio: Tensor,
         act: Tensor,
         reset: Tensor,
         in_state: Tensor,
         rgb_g: Tensor = None,
+        proprio: Tensor = None,
     ) -> Dict[str, Tensor]:
         embed = self.encoder(rgb_s, rgb_g)
         if self.with_proprio:
             embed = torch.cat((embed, proprio), -1)
 
-        prior, post, features, out_states = self.rssm_core.forward(embed, act, reset, in_state)
+        if self.inv_dyna is not None:
+            latent_act = self.inv_dyna(embed)
+            act = latent_act
+
+        prior, post, features, out_states = self.rssm_core.forward(embed[1:], act, reset, in_state)
 
         dcd_img_s, dcd_img_g = self.decoder(features)
 
@@ -109,6 +120,8 @@ class DreamerV2(WorldModel):
             "dcd_img_g": dcd_img_g,
             "out_states": out_states,
         }
+        if self.inv_dyna is not None:
+            outputs["pred_act"] = latent_act
 
         return outputs
 
@@ -133,11 +146,11 @@ class DreamerV2(WorldModel):
 
             outs = self(
                 rgb_s_dev,
-                proprio_dev,
                 actions_dev,
                 reset_dev,
                 in_state,
                 rgb_g=rgb_g_dev,
+                proprio=proprio_dev,
             )
 
         # features = torch.cat((outs["features"], outs["prior"]), -1)
@@ -169,11 +182,11 @@ class DreamerV2(WorldModel):
             rgb_g_input = batch["rgb_obs"].get("rgb_gripper")
             outs = self(
                 batch["rgb_obs"]["rgb_static"],
-                batch["robot_obs"],
                 batch["actions"]["pre_actions"],
                 batch["reset"],
                 self.in_state,
                 rgb_g=rgb_g_input,
+                proprio=batch["robot_obs"],
             )
             losses = self.loss(batch, outs)
             samples = (outs["prior"], outs["features"])
@@ -218,11 +231,11 @@ class DreamerV2(WorldModel):
             rgb_g_input = batch["rgb_obs"].get("rgb_gripper")
             outs = self(
                 batch["rgb_obs"]["rgb_static"],
-                batch["robot_obs"],
                 batch["actions"]["pre_actions"],
                 batch["reset"],
                 self.in_state,
                 rgb_g=rgb_g_input,
+                proprio=batch["robot_obs"],
             )
             losses = self.loss(batch, outs)
             samples = (outs["prior"], outs["features"])
@@ -279,11 +292,18 @@ class DreamerV2(WorldModel):
             obs_list.append(batch["rgb_obs"].get("rgb_gripper"))
             dcd_img_list.append(outs.get("dcd_img_g"))
 
-        obs = torch.cat(obs_list, dim=2)
+        obs = torch.cat(obs_list, dim=2)[1:]
         dcd_img = torch.cat(dcd_img_list, dim=2)
         loss_reconstr = 0.5 * torch.square(dcd_img - obs).sum(dim=[-1, -2, -3])  # MSE
 
         loss = self.kl_weight * loss_kl + self.image_weight * loss_reconstr
+
+        if self.inv_dyna is not None:
+            gt_actions = batch["actions"]["pre_actions"]
+            predicted_actions = outs["pred_act"]
+            loss_inv_dyna = 0.5 * torch.square(predicted_actions - gt_actions).sum(dim=[-1])
+
+            loss = loss + self.act_weight * loss_inv_dyna
 
         metrics = {
             "loss_total": loss,
@@ -294,6 +314,8 @@ class DreamerV2(WorldModel):
             "entropy_prior": dprior.entropy(),
             "entropy_post": dpost.entropy(),
         }
+        if self.inv_dyna is not None:
+            metrics["loss_act"] = loss_inv_dyna
 
         metrics = {k: v.mean() for k, v in metrics.items()}
 

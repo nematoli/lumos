@@ -1,6 +1,7 @@
 defaults:
   - encoder: cnn_encoder_64
   - decoder: cnn_decoder_64
+  - inv_dyna: default
   - rssm: default
   - amp: default
   - optimizer: adamw
