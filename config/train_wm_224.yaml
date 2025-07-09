@@ -16,3 +16,7 @@ trainer:
   devices: 8
   strategy: ddp
   use_distributed_sampler: false
+
+world_model:
+  loss:
+    kl_weight: 1.5
