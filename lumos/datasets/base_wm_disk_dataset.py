@@ -99,27 +99,26 @@ class BaseWMDiskDataset(BaseDataset):
 
         if start_idx in self.start_ids:
             episodes = self.zip_sequence(start_idx, end_idx)
-            # [self.load_file(self._get_episode_name(file_idx)) for file_idx in range(start_idx, end_idx)]
             episode = {key: np.stack([ep[key] for ep in episodes]) for key in keys}
+            for key in keys:
+                if "rgb" in key:
+                    episode[key] = np.concatenate([episode[key][0:1], episode[key]], axis=0)
 
             episode["pre_actions"] = np.roll(episode["rel_actions"], shift=1, axis=0)
             episode["pre_actions"][0] = zero_action
 
-            episode["pre_robot_obs"] = np.roll(episode["robot_obs"], shift=1, axis=0)
             resets[0] = True
         else:
             episodes = self.zip_sequence(start_idx - 1, end_idx)
+            episode = {}
 
-            # [self.load_file(self._get_episode_name(file_idx)) for file_idx in range(start_idx - 1, end_idx)]
-            episode = {key: np.stack([ep[key] for ep in episodes[1:]]) for key in keys}
+            for key in keys:
+                if "rgb" in key:
+                    episode[key] = np.stack([ep[key] for ep in episodes])
+                else:
+                    episode[key] = np.stack([ep[key] for ep in episodes[1:]])
 
             episode["pre_actions"] = np.stack([ep["rel_actions"] for ep in episodes[:-1]])
-
-            episode["pre_robot_obs"] = np.stack([ep["robot_obs"] for ep in episodes[:-1]])
-
-        # reset_indices = np.nonzero(resets.squeeze())[0]
-        # for idx in reset_indices:
-        #     episode["pre_actions"][idx] = zero_action
 
         episode["reset"] = resets
         episode["frame"] = np.arange(start_idx, end_idx, dtype=np.int32)[:, np.newaxis]
