@@ -96,6 +96,7 @@ class BaseWMDiskDataset(BaseDataset):
             resets = np.random.rand(window_size, 1) <= self.reset_prob
         zero_action = np.zeros(7, dtype=np.float64)
         zero_action[-1] = 1.0
+        inf_action = np.full(7, np.inf, dtype=np.float64)
 
         if start_idx in self.start_ids:
             episodes = self.zip_sequence(start_idx, end_idx)
@@ -104,8 +105,11 @@ class BaseWMDiskDataset(BaseDataset):
                 if "rgb" in key:
                     episode[key] = np.concatenate([episode[key][0:1], episode[key]], axis=0)
 
-            episode["pre_actions"] = np.roll(episode["rel_actions"], shift=1, axis=0)
-            episode["pre_actions"][0] = zero_action
+            if "rel_actions" in episode and np.random.rand() < 0.5:
+                episode["pre_actions"] = np.roll(episode["rel_actions"], shift=1, axis=0)
+                episode["pre_actions"][0] = zero_action
+            else:
+                episode["pre_actions"] = np.stack([inf_action.copy() for _ in range(window_size)], axis=0)
 
             resets[0] = True
         else:
@@ -118,7 +122,10 @@ class BaseWMDiskDataset(BaseDataset):
                 else:
                     episode[key] = np.stack([ep[key] for ep in episodes[1:]])
 
-            episode["pre_actions"] = np.stack([ep["rel_actions"] for ep in episodes[:-1]])
+            if "rel_actions" in episode and np.random.rand() < 0.5:
+                episode["pre_actions"] = np.stack([ep["rel_actions"] for ep in episodes[:-1]])
+            else:
+                episode["pre_actions"] = np.stack([inf_action.copy() for _ in range(window_size)], axis=0)
 
         episode["reset"] = resets
         episode["frame"] = np.arange(start_idx, end_idx, dtype=np.int32)[:, np.newaxis]

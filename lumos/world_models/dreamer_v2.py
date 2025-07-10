@@ -301,7 +301,10 @@ class DreamerV2(WorldModel):
         if self.inv_dyna is not None:
             gt_actions = batch["actions"]["pre_actions"]
             predicted_actions = outs["pred_act"]
-            loss_inv_dyna = 0.5 * torch.square(predicted_actions - gt_actions).sum(dim=[-1])
+
+            finite_mask = torch.isfinite(gt_actions)
+            safe_gt_actions = torch.where(finite_mask, gt_actions, predicted_actions)
+            loss_inv_dyna = 0.5 * torch.square(predicted_actions - safe_gt_actions).sum(dim=[-1])
 
             loss = loss + self.act_weight * loss_inv_dyna
 
