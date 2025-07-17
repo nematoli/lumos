@@ -16,7 +16,7 @@ export HYDRA_FULL_ERROR=1
 # Job to perform
 source ~/.bashrc
 conda activate $1
-srun python $2 slurm=true hydra.run.dir=$3 trainer.gpus=$4 ${@:5}
+srun python $2 slurm=true hydra.run.dir=$3 trainer.devices=$4 ${@:5}
 
 # Print some Information about the end-time to STDOUT
 echo "DONE";
