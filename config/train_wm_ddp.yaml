@@ -1,0 +1,41 @@
+defaults:
+  - setup
+  - tensor_cores
+  - callbacks: wm_default
+  - datamodule: static_gripper_cam
+  - world_model: dreamer_v2
+  - trainer: wm_default
+  - logger: wandb
+  - _self_
+
+  - override datamodule/batch_sampler@datamodule.batch_sampler: batch_equidistant
+  - override callbacks: wm_ddp
+
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+datamodule:
+  root_data_dir: ${root}/dataset/calvin/task_D_D_rgb64_rot6d
+  train_batch_size: 25
+  val_batch_size: 25
+  use_cached_data: false
+
+trainer:
+  devices: 2
+  strategy: ddp
+  use_distributed_sampler: false
+
+script: wm
+
+hydra:
+  run:
+    dir: ${log_dir}/runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ${log_dir}/runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.override_dirname}
+  job:
+    config:
+      override_dirname:
+        exclude_keys:
+          - log_dir
+          - datamodule.root_data_dir
