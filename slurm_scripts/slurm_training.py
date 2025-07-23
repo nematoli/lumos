@@ -78,7 +78,7 @@ if args.partition == "testdlc_gpu-rtx2080":
 job_opts = {
     "script": f"{args.script.as_posix()} {args.venv} {args.train_file.as_posix()} {log_dir.as_posix()} {args.gpus} {' '.join(unknownargs)}",
     "partition": args.partition,
-    "ntasks-per-node": str(1),
+    "ntasks-per-node": str(args.gpus),
     "cpus-per-task": str(args.gpus * 8),
     "gres": f"gpu:{args.gpus}",
     "nodes": str(1),
@@ -94,7 +94,7 @@ if args.mem > 0:
     job_opts["mem"] = args.mem
 
 if args.exclude is not None:
-    job_opts["exclude"] = ",".join(map(lambda x: f"dlcgpu{int(x):02d}", args.exclude.split(",")))
+    job_opts["exclude"] = ",".join(map(lambda x: f"dlc2gpu{int(x):02d}", args.exclude.split(",")))
 
 
 def submit_job(job_info):
