@@ -6,7 +6,6 @@ from typing import Dict, Tuple, Union
 import mmh3
 import numpy as np
 from omegaconf import DictConfig
-import pyhash
 import torch
 from torch.utils.data import Dataset
 
