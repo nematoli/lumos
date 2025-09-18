@@ -1,10 +1,15 @@
 from pathlib import Path
 import shutil
+import sys
 
 import hydra
 import numpy as np
 from omegaconf import DictConfig
 from tqdm import tqdm
+
+sys.path.insert(0, Path(__file__).absolute().parents[1].as_posix())
+# Add local repo to path
+sys.path.insert(0, str(Path(__file__).absolute().parents[1]))
 
 
 @hydra.main(version_base="1.3", config_path="../config", config_name="append_calvin_patch")

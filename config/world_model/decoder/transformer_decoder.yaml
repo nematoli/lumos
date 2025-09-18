@@ -8,4 +8,4 @@ num_self_attn_blocks: 2
 heads: 8
 mlp_mult: 4
 dropout: 0.1
-use_positional_out: False
+use_positional_out: True
