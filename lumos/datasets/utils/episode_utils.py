@@ -62,6 +62,30 @@ def process_state(
         else:
             return {"robot_obs": seq_state_obs}
 
+def process_patch(
+    episode: Dict[str, np.ndarray],
+    observation_space: DictConfig,
+    transforms: Dict,
+    seq_idx: int = 0,
+    window_size: int = 0,
+) -> Dict[str, Dict[str, torch.Tensor]]:
+    patch_obs_keys = ["patches"]
+    seq_patch_obs_dict = {}
+    for _, patch_obs_key in enumerate(patch_obs_keys):
+        patch_ob = episode[patch_obs_key]
+        # expand dims for single environment obs
+        assert len(patch_ob.shape) == 3
+        if window_size == 0 and seq_idx == 0:  # single file loader
+            # To Square image
+            seq_patch_obs_ = torch.from_numpy(patch_ob).float()
+        else:  # episode loader
+            seq_patch_obs_ = torch.from_numpy(patch_ob[seq_idx : seq_idx + window_size]).float()
+        # we might have different transformations for the different cameras
+        if patch_obs_key in transforms:
+            seq_patch_obs_ = transforms[patch_obs_key](seq_patch_obs_)
+        seq_patch_obs_dict[patch_obs_key] = seq_patch_obs_
+    # shape: N_patch_obs x (BxCxHxW)
+    return seq_patch_obs_dict
 
 def process_rgb(
     episode: Dict[str, np.ndarray],

@@ -1,0 +1,9 @@
+defaults:
+  - base_transformers
+
+_target_: lumos.world_models.dreamer_v2_patch.DreamerV2
+name: dreamer_v2_patch
+use_gripper_camera: ${datamodule.use_gripper_camera}
+use_rgb_decoder: true
+with_proprio: true
+robot_dim: ${datamodule.proprioception_dims.n_state_obs}

@@ -5,7 +5,7 @@ from typing import Dict, Tuple, Union
 
 import numpy as np
 from omegaconf import DictConfig
-import pyhash
+import mmh3
 import torch
 from torch.utils.data import Dataset
 
@@ -16,9 +16,9 @@ from lumos.datasets.utils.episode_utils import (
     process_language,
     process_rgb,
     process_state,
+    process_patch,
 )
 
-hasher = pyhash.fnv1_32()
 logger = logging.getLogger(__name__)
 
 
@@ -34,8 +34,9 @@ def get_validation_window_size(idx: int, min_window_size: int, max_window_size: 
     Returns:
         Window size computed with hash function.
     """
+    hash_val = mmh3.hash(str(idx), seed=0, signed=False)  # unsigned 32-bit
     window_range = max_window_size - min_window_size + 1
-    return min_window_size + hasher(str(idx)) % window_range
+    return min_window_size + hash_val % window_range
 
 
 class BaseDataset(Dataset):
@@ -141,6 +142,7 @@ class BaseDataset(Dataset):
         episode = self._load_episode(idx, window_size)
         if self.for_wm:
             seq_state_obs = process_state(episode, self.observation_space, self.transforms, self.proprio_state)
+            seq_patch_obs = process_patch(episode, self.observation_space, self.transforms)
             seq_rgb_obs = process_rgb(episode, self.observation_space, self.transforms)
             seq_depth_obs = process_depth(episode, self.observation_space, self.transforms)
             action_keys = copy.deepcopy(self.observation_space["actions"])
@@ -154,6 +156,7 @@ class BaseDataset(Dataset):
             seq_frames = {"frame": torch.from_numpy(episode["frame"])}
 
             seq_dict = {
+                **seq_patch_obs,
                 **seq_state_obs,
                 **seq_rgb_obs,
                 **seq_depth_obs,

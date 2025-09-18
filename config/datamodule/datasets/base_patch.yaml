@@ -1,0 +1,6 @@
+defaults:
+  - wm_disk_dataset: base
+
+
+wm_disk_dataset:
+  _target_: lumos.datasets.patch_wm_disk_dataset.PatchWMDiskDataset

@@ -1,0 +1,11 @@
+_target_: lumos.world_models.decoders.transformer_decoder.PerceiverPatchDecoder
+in_dim: 2048
+out_dim: 1024
+num_patches: 50
+latent_dim: 512
+num_latents: 16
+num_self_attn_blocks: 2
+heads: 8
+mlp_mult: 4
+dropout: 0.1
+use_positional_out: False

@@ -1,0 +1,12 @@
+_target_: lumos.world_models.encoders.transformer_encoder.PerceiverPatchEncoder
+in_dim: 1024
+num_patches: 50
+latent_dim: 512
+num_latents: 16
+num_self_attn_blocks: 4
+heads: 8
+mlp_mult: 4
+dropout: 0.1
+out_dim: 2048
+use_positional_enc: True
+pool: "mean"

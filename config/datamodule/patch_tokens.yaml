@@ -1,0 +1,22 @@
+defaults:
+  - datasets: base_patch
+  - transforms: patch_wm
+  - proprioception_dims: robot_no_joints_small
+  - batch_sampler: equidistant
+  - observation_space: patch_tokens
+
+_target_: lumos.datasets.base_data_module.BaseDataModule
+_recursive_: false
+root_data_dir: /home/lagandua/data/calvin_debug_flower_rgb_static
+action_space: 7
+action_max: [1., 1., 1., 1., 1., 1., 1.,]
+action_min: [-1., -1., -1., -1., -1., -1., -1]
+shuffle_val: false
+load_feats: false
+use_cached_data: true
+use_gripper_camera: true
+
+reset_prob: 0.01
+train_batch_size: 50
+val_batch_size: 50
+seq_len: 50
