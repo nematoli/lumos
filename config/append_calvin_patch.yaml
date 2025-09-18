@@ -1,0 +1,7 @@
+defaults:
+  - setup
+
+input_dir: /home/lagandua/data/calvin_debug_rgb64_rot6d
+output_dir: /home/lagandua/data/calvin_debug_flower_rgb_static
+desired_keys: ['rgb_static', 'rgb_gripper']  # ['actions', 'rel_actions', 'robot_obs', 'scene_obs', 'rgb_static', 'rgb_gripper', 'rgb_tactile', 'depth_static', 'depth_gripper', 'depth_tactile']
+rot6d: true
