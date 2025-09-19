@@ -13,7 +13,7 @@ action_max: [1., 1., 1., 1., 1., 1., 1.,]
 action_min: [-1., -1., -1., -1., -1., -1., -1]
 shuffle_val: false
 load_feats: false
-use_cached_data: true
+use_cached_data: false
 use_gripper_camera: true
 
 reset_prob: 0.01
