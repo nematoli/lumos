@@ -8,11 +8,13 @@ import torch.nn.functional as F
 # Building blocks
 # ----------------------------
 
+
 class LayerNormFP32(nn.LayerNorm):
     """LayerNorm that runs in fp32 for stability even if inputs are fp16/bf16."""
     def forward(self, x):
         orig_dtype = x.dtype
         return super().forward(x.float()).to(orig_dtype)
+
 
 class MLP(nn.Module):
     def __init__(self, dim, hidden_mult=4, dropout=0.0):
@@ -25,8 +27,10 @@ class MLP(nn.Module):
             nn.Linear(hidden, dim),
             nn.Dropout(dropout),
         )
+
     def forward(self, x):
         return self.net(x)
+
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, dim, heads=8, dropout=0.0, kv_dim=None):
@@ -72,6 +76,7 @@ class MultiHeadAttention(nn.Module):
         out = self.o_proj(out)
         return out
 
+
 class TransformerBlock(nn.Module):
     def __init__(self, dim, heads=8, mlp_mult=4, dropout=0.0):
         super().__init__()
@@ -84,6 +89,7 @@ class TransformerBlock(nn.Module):
         x = x + self.attn(self.ln1(x))
         x = x + self.mlp(self.ln2(x))
         return x
+
 
 class CrossAttentionBlock(nn.Module):
     def __init__(self, q_dim, kv_dim, heads=8, mlp_mult=4, dropout=0.0):
@@ -98,6 +104,7 @@ class CrossAttentionBlock(nn.Module):
         q = q + self.attn(self.ln_q(q), self.ln_kv(kv), attn_mask)
         q = q + self.mlp(self.ln_out(q))
         return q
+
 
 # ----------------------------
 # Perceiver-style encoder
@@ -233,4 +240,3 @@ if __name__ == "__main__":
 
     z = encoder(x)               # (B, rssm_dim)
     print(z.shape)
-    

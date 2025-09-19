@@ -62,6 +62,7 @@ def process_state(
         else:
             return {"robot_obs": seq_state_obs}
 
+
 def process_patch(
     episode: Dict[str, np.ndarray],
     observation_space: DictConfig,
@@ -86,6 +87,7 @@ def process_patch(
         seq_patch_obs_dict[patch_obs_key] = seq_patch_obs_
     # shape: N_patch_obs x (BxCxHxW)
     return seq_patch_obs_dict
+
 
 def process_rgb(
     episode: Dict[str, np.ndarray],

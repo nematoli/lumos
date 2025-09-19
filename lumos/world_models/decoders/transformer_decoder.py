@@ -9,6 +9,7 @@ from lumos.world_models.encoders.transformer_encoder import TransformerBlock, Cr
 # Perceiver-style decoder to 50×1024
 # ----------------------------
 
+
 class PerceiverPatchDecoder(nn.Module):
     """
     Decodes a single vector (B, in_dim) back to 50×1024 patch embeddings.
@@ -88,6 +89,7 @@ class PerceiverPatchDecoder(nn.Module):
         out = self.out_head(dec)      # (B*Seq, 50, 1024)
         out = out.reshape(B, S, self.num_patches, out.shape[-1])  # (B, Seq, 50, 1024)
         return out
+
 
 if __name__ == "__main__":
     B = 8
