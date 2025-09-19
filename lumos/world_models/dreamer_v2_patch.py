@@ -1,3 +1,4 @@
+from itertools import chain
 import logging
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -52,7 +53,8 @@ class DreamerV2(WorldModel):
         if self.use_rgb_decoder:
             rgb_decoder.use_gripper_camera = self.use_gripper_camera
             rgb_decoder.in_dim = decoder.in_dim
-            self.rgb_decoder = hydra.utils.instantiate(rgb_decoder)       
+            self.rgb_decoder = hydra.utils.instantiate(rgb_decoder)
+            self.rgb_opt_scaler = hydra.utils.instantiate(amp.scaler)
         self.with_proprio = with_proprio
         self.rssm_core = hydra.utils.instantiate(rssm)
         self.autocast = hydra.utils.instantiate(amp.autocast)
@@ -86,8 +88,15 @@ class DreamerV2(WorldModel):
         self.save_hyperparameters()
 
     def configure_optimizers(self):
-        optimizer = hydra.utils.instantiate(self.optimizer, params=self.parameters())
-        return {"optimizer": optimizer}
+        optimizer = hydra.utils.instantiate(
+            self.optimizer,
+            params=chain(self.encoder.parameters(), self.decoder.parameters(), self.rssm_core.parameters()),
+        )
+        if self.use_rgb_decoder:
+            rgb_optimizer = hydra.utils.instantiate(self.optimizer, params=self.rgb_decoder.parameters())
+        else:
+            rgb_optimizer = None
+        return [optimizer, rgb_optimizer]
 
     def forward(
         self,
@@ -97,7 +106,6 @@ class DreamerV2(WorldModel):
         reset: Tensor,
         in_state: Tensor,
     ) -> Dict[str, Tensor]:
-
         embed = self.encoder(patches)
         if self.with_proprio:
             embed = torch.cat((embed, proprio), -1)
@@ -106,7 +114,7 @@ class DreamerV2(WorldModel):
 
         dcd_patches = self.decoder(features)
         if self.use_rgb_decoder:
-            dcd_img_s, dcd_img_g = self.rgb_decoder(features)
+            dcd_img_s, dcd_img_g = self.rgb_decoder(features.detach())
         else:
             dcd_img_s, dcd_img_g = None, None
 
@@ -168,7 +176,7 @@ class DreamerV2(WorldModel):
         self.in_state = self.rssm_core.init_state(self.train_batch_size)
 
     def training_step(self, batch: Dict[str, Tensor], batch_idx: int) -> Dict[str, Union[Tensor, Any]]:
-        opt = self.optimizers()
+        opt, rgb_opt = self.optimizers()
         opt.zero_grad()
         batch = batch["vis"]
 
@@ -206,9 +214,18 @@ class DreamerV2(WorldModel):
             )
 
         self.scaler.scale(losses["loss_total"]).backward()
-        torch.nn.utils.clip_grad_norm_(self.parameters(), self.grad_clip)
+        torch.nn.utils.clip_grad_norm_(
+            chain(self.encoder.parameters(), self.decoder.parameters(), self.rssm_core.parameters()), self.grad_clip
+        )
         self.scaler.step(opt)
         self.scaler.update()
+
+        if self.use_rgb_decoder:
+            rgb_opt.zero_grad()
+            self.rgb_opt_scaler.scale(losses["loss_img"]).backward()
+            torch.nn.utils.clip_grad_norm_(self.rgb_decoder.parameters(), self.grad_clip)
+            self.rgb_opt_scaler.step(rgb_opt)
+            self.rgb_opt_scaler.update()
 
         return losses["loss_total"]
 
@@ -276,6 +293,7 @@ class DreamerV2(WorldModel):
         loss_kl = (1 - self.kl_balance) * loss_kl_post + self.kl_balance * loss_kl_prior
 
         loss_reconstr = 0.5 * torch.square(outs["dcd_patches"] - batch["patches"]).sum(dim=[-1, -2, -3])  # MSE
+        loss = self.kl_weight * loss_kl + self.patch_weight * loss_reconstr
 
         if self.use_rgb_decoder:
             obs_list = [batch["rgb_obs"]["rgb_static"]]
@@ -288,8 +306,6 @@ class DreamerV2(WorldModel):
             obs = torch.cat(obs_list, dim=2)
             dcd_img = torch.cat(dcd_img_list, dim=2)
             loss_img_reconstr = 0.5 * torch.square(dcd_img - obs).sum(dim=[-1, -2, -3])  # MSE
-
-        loss = self.kl_weight * loss_kl + self.patch_weight * loss_reconstr + self.image_weight * loss_img_reconstr
 
         metrics = {
             "loss_total": loss,
