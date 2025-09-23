@@ -107,8 +107,8 @@ class Transformer(nn.Module):
     
 class ViTEncoder(nn.Module):
     """
-    ViT-style encode that maps a latent patches of shape (B, Seq, Num_Patches, Patch_Dim)
-    to a flattened vector of shape (B, Seq, Num_Patches * Out_Dim).
+    ViT-style encode that maps a latent patches of shape (Seq, B, Num_Patches, Patch_Dim)
+    to a flattened vector of shape (Seq, B, Num_Patches * Out_Dim).
 
     Args:
         num_patches: number of patch tokens (50)
@@ -128,11 +128,11 @@ class ViTEncoder(nn.Module):
         self.dropout = nn.Dropout(emb_dropout)
         self.transformer = Transformer(in_dim, out_dim, depth, heads, dim_head, mlp_dim, dropout)
 
-    def forward(self, x): # x: (B, Seq, 50, 1024)
-        B, S, N, D = x.shape
-        x = x.view(B * S, N, D)  # (B*Seq, 50, 1024)
+    def forward(self, x): # x: (Seq, B, 50, 1024)
+        S, B, N, D = x.shape
+        x = x.reshape(S*B, N, D)  # (Seq*B, 50, 1024)
         x = x + self.pos_embedding[:, :N]
         x = self.dropout(x) 
-        x = self.transformer(x) # (B*Seq, 50, out_dim)
-        x = x.view(B, S, -1) # (B, Seq, 50*out_dim)
+        x = self.transformer(x) # (Seq*B, 50, out_dim)
+        x = x.view(S, B, -1) # (Seq, B, 50*out_dim)
         return x

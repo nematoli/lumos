@@ -292,7 +292,7 @@ class DreamerV2(WorldModel):
         loss_kl_prior = D.kl.kl_divergence(self.rssm_core.zdistr(outs["post"].detach()), dprior)
         loss_kl = (1 - self.kl_balance) * loss_kl_post + self.kl_balance * loss_kl_prior
 
-        loss_reconstr = 0.5 * torch.square(outs["dcd_patches"] - batch["patches"]).sum(dim=[-1, -2, -3])  # MSE
+        loss_reconstr = 0.5 * torch.square(outs["dcd_patches"] - batch["patches"]).sum(dim=[-1, -2])  # MSE
         loss = self.kl_weight * loss_kl + self.patch_weight * loss_reconstr
 
         if self.use_rgb_decoder:

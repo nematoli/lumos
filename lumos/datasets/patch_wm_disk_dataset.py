@@ -77,15 +77,12 @@ class PatchWMDiskDataset(BaseWMDiskDataset):
             episode["pre_actions"] = np.roll(episode["rel_actions"], shift=1, axis=0)
             episode["pre_actions"][0] = zero_action
 
-            episode["pre_robot_obs"] = np.roll(episode["robot_obs"], shift=1, axis=0)
             resets[0] = True
         else:
             episodes = self.zip_sequence(start_idx - 1, end_idx)
             episode = {key: np.stack([ep[self.key_map[key]] for ep in episodes[1:]]) for key in self.keys}
 
             episode["pre_actions"] = np.stack([ep["rel_actions"] for ep in episodes[:-1]])
-
-            episode["pre_robot_obs"] = np.stack([ep["robot_obs"] for ep in episodes[:-1]])
 
         episode["reset"] = resets
         episode["frame"] = np.arange(start_idx, end_idx, dtype=np.int32)[:, np.newaxis]

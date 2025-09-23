@@ -82,15 +82,15 @@ class ViTDecoder(nn.Module):
         z: (B, in_dim)
         returns: (B, 50, 1024)
         """
-        B, S, D = z.shape
-        z = z.view(B * S, D)  # (B*Seq, in_dim)
+        S, B, D = z.shape
+        z = z.view(S * B, D)  # (Seq*B, in_dim)
 
-        # (B*Seq, in_dim) -> (B*Seq, num_patches, out_dim)
-        x = self.latent_to_tokens(z).view(B*S, self.num_patches, self.out_dim)
+        # (Seq*B, in_dim) -> (Seq*B, num_patches, out_dim)
+        x = self.latent_to_tokens(z).view(S*B, self.num_patches, self.out_dim)
         x = x + self.pos_embedding[:, : self.num_patches]
         x = self.dropout(x)
         x = self.transformer(x)
         x = self.out_norm(x)
-        x = x.view(B, S, self.num_patches, self.out_dim)
+        x = x.view(S, B, self.num_patches, self.out_dim)
 
         return x

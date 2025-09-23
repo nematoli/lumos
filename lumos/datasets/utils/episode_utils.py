@@ -100,6 +100,8 @@ def process_rgb(
 
     seq_rgb_obs_dict = {}
     for _, rgb_obs_key in enumerate(rgb_obs_keys):
+        if "patches" in rgb_obs_key:
+            continue
         rgb_obs = episode[rgb_obs_key]
         # expand dims for single environment obs
         if len(rgb_obs.shape) != 4:
@@ -191,13 +193,13 @@ def get_state_info_dict(episode: Dict[str, np.ndarray], for_wm: bool) -> Dict[st
          Info dict of full robot and scene state (for env resets).
     """
     info = {
-        "state_info": {
-            "robot_obs": torch.from_numpy(episode["robot_obs"]),
+        # "state_info": {
+            # "robot_obs": torch.from_numpy(episode["robot_obs"]),
             # "scene_obs": torch.from_numpy(episode["scene_obs"]),
-        }
+        # }
     }
-    if for_wm:
-        info["state_info"]["pre_robot_obs"] = torch.from_numpy(episode["pre_robot_obs"])
+    # if for_wm:
+    #     info["state_info"]["pre_robot_obs"] = torch.from_numpy(episode["pre_robot_obs"])
     return info
 
 
