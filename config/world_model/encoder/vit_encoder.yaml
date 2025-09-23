@@ -1,0 +1,10 @@
+_target_: lumos.world_models.encoders.vit_encoder.ViTEncoder
+num_frames: 1 # history frames
+num_patches: 50
+in_dim: 1024
+depth: 6
+heads: 16
+mlp_dim: 2048
+dropout: 0.1
+emb_dropout: 0.1
+out_dim: 40

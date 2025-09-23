@@ -1,6 +1,6 @@
 defaults:
-  - encoder: transformer_encoder
-  - decoder: transformer_decoder
+  - encoder: vit_encoder
+  - decoder: vit_decoder
   - rgb_decoder: cnn_decoder
   - rssm: default
   - amp: default

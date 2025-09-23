@@ -46,7 +46,7 @@ class DreamerV2(WorldModel):
         super(DreamerV2, self).__init__(name=name)
         self.use_rgb_decoder = use_rgb_decoder
         self.use_gripper_camera = use_gripper_camera
-        rssm.cell.embed_dim = encoder.out_dim + robot_dim if with_proprio else encoder.out_dim
+        rssm.cell.embed_dim = encoder.out_dim*encoder.num_patches + robot_dim if with_proprio else encoder.out_dim*encoder.num_patches
         self.encoder = hydra.utils.instantiate(encoder)
         decoder.in_dim = rssm.cell.deter_dim + rssm.cell.stoch_dim * rssm.cell.stoch_rank
         self.decoder = hydra.utils.instantiate(decoder)

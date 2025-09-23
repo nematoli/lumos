@@ -11,3 +11,4 @@ opencv-python
 tqdm
 wandb
 mmh3
+einops
