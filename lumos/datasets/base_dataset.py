@@ -142,7 +142,7 @@ class BaseDataset(Dataset):
         episode = self._load_episode(idx, window_size)
         if self.for_wm:
             seq_state_obs = process_state(episode, self.observation_space, self.transforms, self.proprio_state)
-            seq_patch_obs = process_patch(episode, self.observation_space, self.transforms)
+            # seq_patch_obs = process_patch(episode, self.observation_space, self.transforms)
             seq_rgb_obs = process_rgb(episode, self.observation_space, self.transforms)
             seq_depth_obs = process_depth(episode, self.observation_space, self.transforms)
             action_keys = copy.deepcopy(self.observation_space["actions"])
@@ -156,7 +156,7 @@ class BaseDataset(Dataset):
             seq_frames = {"frame": torch.from_numpy(episode["frame"])}
 
             seq_dict = {
-                **seq_patch_obs,
+                # **seq_patch_obs,
                 **seq_state_obs,
                 **seq_rgb_obs,
                 **seq_depth_obs,

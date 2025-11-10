@@ -1,8 +1,8 @@
 defaults:
   - setup
 
-input_dir: ${root}/dataset/calvin/task_D_D
-output_dir: ${root}/dataset/calvin/task_D_D_rgb64_rot6d
+input_dir: /home/lagandua/data/calvin_debug_dataset
+output_dir: /home/lagandua/data/calvin_debug_rgb64_rot6d
 desired_keys: ['rel_actions', 'robot_obs', 'scene_obs', 'rgb_static', 'rgb_gripper']  # ['actions', 'rel_actions', 'robot_obs', 'scene_obs', 'rgb_static', 'rgb_gripper', 'rgb_tactile', 'depth_static', 'depth_gripper', 'depth_tactile']
 desired_resolution: 64
 rgb_interpolation: Area # Area for downsampling, Cubic for upsampling

@@ -5,7 +5,7 @@ defaults:
   - datamodule: patch_tokens
   - world_model: dreamer_v2_patch
   - trainer: wm_default
-  - logger: wandb
+  - logger: none
   - _self_
 
   - override hydra/job_logging: colorlog
