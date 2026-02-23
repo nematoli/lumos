@@ -10,5 +10,4 @@ matplotlib
 opencv-python
 tqdm
 wandb
-timm==0.9.10
 mmh3
