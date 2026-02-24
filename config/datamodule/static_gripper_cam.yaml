@@ -1,5 +1,4 @@
 defaults:
   - base
-  - override transforms: wm_minmax
 
 use_gripper_camera: true

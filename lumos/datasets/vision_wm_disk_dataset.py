@@ -28,6 +28,7 @@ class VisionWMDiskDataset(BaseWMDiskDataset):
         save_format: str = "npz",
         pretrain: bool = False,
         use_cached_data: bool = False,
+        action_chunk_size: int = 1,
         **kwargs: Any,
     ):
         super().__init__(
@@ -37,6 +38,7 @@ class VisionWMDiskDataset(BaseWMDiskDataset):
             save_format=save_format,
             pretrain=pretrain,
             use_cached_data=False,
+            action_chunk_size=action_chunk_size,
             **kwargs,
         )
         # Preloading is different for LIBERO compared to CALVIN

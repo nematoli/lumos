@@ -50,8 +50,8 @@ def transpose_collate_wm(batch):
     fields = ["reset", "robot_obs", "frame"]
     nested_fields = {
         "rgb_obs": ["rgb_static", "rgb_gripper"],
-        "state_info": ["robot_obs", "pre_robot_obs"],
-        "actions": ["rel_actions", "pre_actions"],
+        "state_info": ["robot_obs"],
+        "actions": ["pre_actions"],
     }
 
     for key, value in collated_batch.items():

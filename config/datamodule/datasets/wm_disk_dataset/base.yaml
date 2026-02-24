@@ -7,6 +7,7 @@ min_window_size: ${datamodule.seq_len}
 max_window_size: ${datamodule.seq_len}
 proprio_state: ${datamodule.proprioception_dims}
 obs_space: ${datamodule.observation_space}
+action_chunk_size: ${datamodule.action_chunk_size}
 pad: false
 for_wm: true
 lang_folder: ""

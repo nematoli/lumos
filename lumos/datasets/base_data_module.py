@@ -29,12 +29,14 @@ class BaseDataModule(pl.LightningDataModule):
         datasets: DictConfig,
         training_repo_root: Optional[Path] = None,
         root_data_dir: str = "datasets/task_D_D",
+        action_chunk_data_dir: str = "datasets/task_D_D_ac5",
         transforms: DictConfig = DEFAULT_TRANSFORM,
         batch_sampler: DictConfig = None,
         shuffle_val: bool = False,
         load_feats: bool = False,
         train_batch_size: int = 32,
         val_batch_size: int = 32,
+        action_chunk_size: int = 1,
         **kwargs: Dict,
     ):
         super().__init__()
@@ -45,8 +47,14 @@ class BaseDataModule(pl.LightningDataModule):
         if not root_data_path.is_absolute():
             assert training_repo_root is not None, "If root_data_path isn't absolute, please provide training_repo_root"
             root_data_path = training_repo_root / root_data_path
+        self.action_chunk_data_dir = Path(action_chunk_data_dir)
+        if not self.action_chunk_data_dir.is_absolute():
+            assert training_repo_root is not None, "If action_chunk_data_dir isn't absolute, please provide training_repo_root"
+            self.action_chunk_data_dir = training_repo_root / self.action_chunk_data_dir
         self.training_dir = root_data_path / "training"
         self.val_dir = root_data_path / "validation"
+        self.action_chunk_training_dir = self.action_chunk_data_dir / "training"
+        self.action_chunk_val_dir = self.action_chunk_data_dir / "validation"
         self.shuffle_val = shuffle_val
         self.modalities: List[str] = []
         self.transforms = transforms
@@ -54,7 +62,7 @@ class BaseDataModule(pl.LightningDataModule):
         self.load_feats = load_feats
         self.train_batch_size = train_batch_size
         self.val_batch_size = val_batch_size
-
+        self.action_chunk_size = action_chunk_size
         if self.datasets_cfg.wm_disk_dataset.key == "vis":
             self.collate_fn = transpose_collate_wm
         elif self.datasets_cfg.wm_disk_dataset.key == "hybrid":
@@ -104,9 +112,19 @@ class BaseDataModule(pl.LightningDataModule):
 
         for _, dataset in self.datasets_cfg.items():
             train_dataset = hydra.utils.instantiate(
-                dataset, datasets_dir=self.training_dir, transforms=self.train_transforms
+                dataset,
+                datasets_dir=self.training_dir,
+                action_chunk_data_dir=self.action_chunk_training_dir,
+                transforms=self.train_transforms,
+                action_chunk_size=self.action_chunk_size,
             )
-            val_dataset = hydra.utils.instantiate(dataset, datasets_dir=self.val_dir, transforms=self.val_transforms)
+            val_dataset = hydra.utils.instantiate(
+                dataset,
+                datasets_dir=self.val_dir,
+                action_chunk_data_dir=self.action_chunk_val_dir,
+                transforms=self.val_transforms,
+                action_chunk_size=self.action_chunk_size,
+            )
 
             if self.load_feats:
                 train_dataset.setup_features(train_features)

@@ -61,6 +61,7 @@ class BaseDataset(Dataset):
     def __init__(
         self,
         datasets_dir: Path,
+        action_chunk_data_dir: Path,
         obs_space: DictConfig,
         proprio_state: DictConfig,
         key: str,
@@ -70,6 +71,7 @@ class BaseDataset(Dataset):
         batch_size: int = 32,
         min_window_size: int = 16,
         max_window_size: int = 32,
+        action_chunk_size: int = 1,
         pad: bool = True,
         aux_lang_loss_window: int = 1,
         for_wm: bool = False,
@@ -83,9 +85,11 @@ class BaseDataset(Dataset):
         self.pad = pad
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.min_window_size = min_window_size
-        self.max_window_size = max_window_size
+        self.action_chunk_size = action_chunk_size
+        self.min_window_size = min_window_size * action_chunk_size
+        self.max_window_size = max_window_size * action_chunk_size
         self.abs_datasets_dir = datasets_dir
+        self.abs_action_chunk_data_dir = action_chunk_data_dir
         self.lang_folder = lang_folder  # if self.with_lang else None
         self.aux_lang_loss_window = aux_lang_loss_window
         self.for_wm = for_wm
@@ -94,6 +98,11 @@ class BaseDataset(Dataset):
         assert self.abs_datasets_dir.is_dir()
         logger.info(f"loading dataset at {self.abs_datasets_dir}")
         logger.info("finished loading dataset")
+        assert "validation" in self.abs_action_chunk_data_dir.as_posix() or "training" in self.abs_action_chunk_data_dir.as_posix()
+        self.validation_action_chunk = "validation" in self.abs_action_chunk_data_dir.as_posix()
+        assert self.abs_action_chunk_data_dir.is_dir()
+        logger.info(f"loading action chunk dataset at {self.abs_action_chunk_data_dir}")
+        logger.info("finished loading action chunk dataset")
         if self.for_wm:
             assert self.min_window_size == self.max_window_size
             self.with_lang = False
@@ -142,13 +151,8 @@ class BaseDataset(Dataset):
         if self.for_wm:
             seq_state_obs = process_state(episode, self.observation_space, self.transforms, self.proprio_state)
             seq_rgb_obs = process_rgb(episode, self.observation_space, self.transforms)
-            seq_depth_obs = process_depth(episode, self.observation_space, self.transforms)
-            action_keys = copy.deepcopy(self.observation_space["actions"])
-            action_keys.append("pre_actions")
-            seq_acts = process_actions(episode, action_keys, self.transforms)
-            info = get_state_info_dict(episode, self.for_wm)
-            seq_lang = process_language(episode, self.transforms, self.with_lang)
-            info = self._add_language_info(info, idx, window_size)
+            seq_acts = process_actions(episode, ["pre_actions"], self.transforms)
+            info = {}
 
             seq_reset = {"reset": torch.from_numpy(episode["reset"]).bool()}
             seq_frames = {"frame": torch.from_numpy(episode["frame"])}
@@ -156,10 +160,8 @@ class BaseDataset(Dataset):
             seq_dict = {
                 **seq_state_obs,
                 **seq_rgb_obs,
-                **seq_depth_obs,
                 **seq_acts,
                 **info,
-                **seq_lang,
                 **seq_reset,
                 **seq_frames,
             }  # type:ignore

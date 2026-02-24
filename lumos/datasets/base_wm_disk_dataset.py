@@ -41,9 +41,14 @@ class BaseWMDiskDataset(BaseDataset):
         save_format: str = "npz",
         pretrain: bool = False,
         use_cached_data: bool = False,
+        action_chunk_size: int = 1,
         **kwargs: Any,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *args,
+            action_chunk_size=action_chunk_size,
+            **kwargs,
+        )
         self.save_format = save_format
         if self.save_format == "pkl":
             self.load_file = load_pkl
@@ -54,10 +59,12 @@ class BaseWMDiskDataset(BaseDataset):
         self.reset_prob = reset_prob
         self.pretrain = pretrain
         self.skip_frames = skip_frames
+        self.action_chunk_size = action_chunk_size
 
         self.episode_lookup, self.start_ids = self._build_file_indices(self.abs_datasets_dir)
 
         self.naming_pattern, self.n_digits = lookup_naming_pattern(self.abs_datasets_dir, self.save_format)
+        self.naming_pattern_action_chunk, self.n_digits_action_chunk = lookup_naming_pattern(self.abs_action_chunk_data_dir, self.save_format)
         self.use_cached_data = use_cached_data
         if self.use_cached_data:
             self.preloaded_data = {}  # Initialize as a dictionary
@@ -74,6 +81,18 @@ class BaseWMDiskDataset(BaseDataset):
             Path to file.
         """
         return Path(f"{self.naming_pattern[0]}{file_idx:0{self.n_digits}d}{self.naming_pattern[1]}")
+    
+    def _get_episode_name_action_chunk(self, file_idx: int) -> Path:
+        """
+        Convert file idx to file path.
+
+        Args:
+            file_idx: index of starting frame.
+
+        Returns:
+            Path to file.
+        """
+        return Path(f"{self.naming_pattern_action_chunk[0]}{file_idx:0{self.n_digits_action_chunk}d}{self.naming_pattern_action_chunk[1]}")
 
     def _load_episode(self, idx: int, window_size: int) -> Dict[str, np.ndarray]:
         """
@@ -89,40 +108,25 @@ class BaseWMDiskDataset(BaseDataset):
         start_idx = self.episode_lookup[idx]
         end_idx = start_idx + window_size
         keys = list(chain(*self.observation_space.values()))
-        # keys.append("scene_obs")
+        keys.remove("rel_actions")
 
         resets = np.zeros((window_size, 1), dtype=bool)
         if self.reset_prob != 0:
             resets = np.random.rand(window_size, 1) <= self.reset_prob
-        zero_action = np.zeros(7, dtype=np.float64)
-        zero_action[-1] = 1.0
 
         if start_idx in self.start_ids:
-            episodes = self.zip_sequence(start_idx, end_idx)
-            # [self.load_file(self._get_episode_name(file_idx)) for file_idx in range(start_idx, end_idx)]
+            episodes, pre_action_chunks = self.zip_sequence(start_idx, end_idx, self.action_chunk_size)
             episode = {key: np.stack([ep[key] for ep in episodes]) for key in keys}
-
-            episode["pre_actions"] = np.roll(episode["rel_actions"], shift=1, axis=0)
-            episode["pre_actions"][0] = zero_action
-
-            episode["pre_robot_obs"] = np.roll(episode["robot_obs"], shift=1, axis=0)
+            episode["pre_actions"] = np.stack([ac["rel_actions"].reshape(-1) for ac in pre_action_chunks])
             resets[0] = True
         else:
-            episodes = self.zip_sequence(start_idx - 1, end_idx)
-
-            # [self.load_file(self._get_episode_name(file_idx)) for file_idx in range(start_idx - 1, end_idx)]
+            episodes, pre_action_chunks = self.zip_sequence(start_idx - 1, end_idx, self.action_chunk_size)
             episode = {key: np.stack([ep[key] for ep in episodes[1:]]) for key in keys}
+            episode["pre_actions"] = np.stack([ac["rel_actions"].reshape(-1) for ac in pre_action_chunks])
 
-            episode["pre_actions"] = np.stack([ep["rel_actions"] for ep in episodes[:-1]])
-
-            episode["pre_robot_obs"] = np.stack([ep["robot_obs"] for ep in episodes[:-1]])
-
-        # reset_indices = np.nonzero(resets.squeeze())[0]
-        # for idx in reset_indices:
-        #     episode["pre_actions"][idx] = zero_action
 
         episode["reset"] = resets
-        episode["frame"] = np.arange(start_idx, end_idx, dtype=np.int32)[:, np.newaxis]
+        episode["frame"] = np.arange(start_idx, end_idx, self.action_chunk_size, dtype=np.int32)[:, np.newaxis]
         return episode
 
     def _build_file_indices(self, abs_datasets_dir: Path) -> np.ndarray:
@@ -180,13 +184,15 @@ class BaseWMDiskDataset(BaseDataset):
                 pickle.dump(self.preloaded_data, f)
         logger.info("Preloaded the dataset into cache.")
 
-    def zip_sequence(self, start_idx: int, end_idx: int) -> Dict[str, np.ndarray]:
+    def zip_sequence(self, start_idx: int, end_idx: int, action_chunk_size: int) -> Dict[str, np.ndarray]:
         if not self.use_cached_data:
-            episodes = [self.load_file(self._get_episode_name(file_idx)) for file_idx in range(start_idx, end_idx)]
+            episodes = [self.load_file(self._get_episode_name(file_idx)) for file_idx in range(start_idx, end_idx, action_chunk_size)]
+            pre_action_chunks = [self.load_file(self._get_episode_name_action_chunk(file_idx - 1)) for file_idx in range(start_idx, end_idx, action_chunk_size)]
         else:
-            episodes = [self.preloaded_data[file_idx] for file_idx in range(start_idx, end_idx)]
-
-        return episodes
+            episodes = [self.preloaded_data[file_idx] for file_idx in range(start_idx, end_idx, action_chunk_size)]
+            assert False, "Zipping sequence with cached data is not implemented yet."
+        
+        return episodes, pre_action_chunks
 
     def extract_episode_number(self, file_path):
         # Regular expression to find the episode number pattern

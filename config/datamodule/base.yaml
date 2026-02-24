@@ -1,14 +1,17 @@
 defaults:
   - datasets: base_vision
   - transforms: wm_basic
-  - proprioception_dims: robot_full_rot6d
+  - proprioception_dims: robot_no_joints
   - batch_sampler: equidistant
   - observation_space: rgb_static_gripper_rel_act
 
 _target_: lumos.datasets.base_data_module.BaseDataModule
 _recursive_: false
-root_data_dir: ${root}/dataset/calvin/task_D_D_rgb64_rot6d
-action_space: 7
+root_data_dir: ${root}/dataset/task_D_D
+action_chunk_data_dir: ${root}/dataset/task_D_D_ac
+action_chunk_size: 1
+action_space: ${mul:${.action_chunk_size}, ${.action_dim}}
+action_dim: 7
 action_max: [1., 1., 1., 1., 1., 1., 1.,]
 action_min: [-1., -1., -1., -1., -1., -1., -1]
 shuffle_val: false

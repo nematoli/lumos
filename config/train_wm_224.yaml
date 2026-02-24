@@ -1,18 +1,20 @@
 defaults:
   - train_wm
-  - override datamodule: static_cam
-  - override datamodule/batch_sampler@datamodule.batch_sampler: batch_equidistant
+  - override datamodule: static_gripper_cam
+  - override datamodule/batch_sampler@datamodule.batch_sampler: equidistant
   - override world_model: dreamer_v2_224
   - override callbacks: wm_ddp
 
 
 datamodule:
-  root_data_dir: ${root}/dataset/calvin/task_D_D_rgb224_rot6d
+  root_data_dir: ${root}/dataset/calvin/task_D_D_224
+  action_chunk_data_dir: ${root}/dataset/calvin/task_D_D_ac5
+  action_chunk_size: 5
   train_batch_size: 8
   val_batch_size: 8
   use_cached_data: false
 
-trainer:
-  devices: 8
-  strategy: ddp
-  use_distributed_sampler: false
+# trainer:
+#   devices: 8
+#   strategy: ddp
+#   use_distributed_sampler: false

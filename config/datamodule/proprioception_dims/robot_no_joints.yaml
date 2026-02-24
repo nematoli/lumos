@@ -1,5 +1,5 @@
-n_state_obs: 8
-keep_indices: [[0, 7], [14,15]]
+n_state_obs: 7
+keep_indices: [[0, 7]]
 robot_orientation_idx: [3, 6]
 normalize: True
 normalize_robot_orientation: True
