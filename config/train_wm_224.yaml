@@ -1,7 +1,7 @@
 defaults:
   - train_wm
   - override datamodule: static_gripper_cam
-  - override datamodule/batch_sampler@datamodule.batch_sampler: equidistant
+  - override datamodule/batch_sampler@datamodule.batch_sampler: batch_equidistant
   - override world_model: dreamer_v2_224
   - override callbacks: wm_ddp
 
@@ -14,7 +14,7 @@ datamodule:
   val_batch_size: 8
   use_cached_data: false
 
-# trainer:
-#   devices: 8
-#   strategy: ddp
-#   use_distributed_sampler: false
+trainer:
+  devices: 8
+  strategy: ddp
+  use_distributed_sampler: false
