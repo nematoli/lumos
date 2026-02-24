@@ -1,0 +1,7 @@
+defaults:
+  - setup
+
+input_dir: ${root}/dataset/calvin/task_D_D
+output_dir: ${root}/dataset/calvin/task_D_D_ac5
+action_chunk_size: 5
+n_digits: 7
