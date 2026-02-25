@@ -46,7 +46,7 @@ def process_dataset(cfg: DictConfig) -> None:
             action_chunk = np.zeros((action_chunk_size, 7))
             output_file = output_split_path / f"episode_{ep_start:0{n_digits}d}.npz"
             np.savez_compressed(output_file, rel_actions=action_chunk.reshape(-1))
-            for ep_idx in tqdm(range(ep_start+1, ep_end), desc="Processing pre-action chunks"):
+            for ep_idx in tqdm(range(ep_start+1, ep_end+1), desc="Processing pre-action chunks"):
                 action_chunk = np.roll(action_chunk, shift=-1, axis=0)
                 action_chunk[-1] = np.load(split_path / f"episode_{ep_idx-1:0{n_digits}d}.npz")["rel_actions"]
                 output_file = output_split_path / f"episode_{ep_idx:0{n_digits}d}.npz"
