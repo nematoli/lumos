@@ -113,16 +113,14 @@ class BaseWMDiskDataset(BaseDataset):
         resets = np.zeros((window_size, 1), dtype=bool)
         if self.reset_prob != 0:
             resets = np.random.rand(window_size, 1) <= self.reset_prob
-
+        
+        episodes, pre_action_chunks = self.zip_sequence(start_idx, end_idx, self.action_chunk_size)
+        episode = {key: np.stack([ep[key] for ep in episodes]) for key in keys}
+        # "rel_actions" here are pre-action chunks so no need to roll them.
+        episode["pre_actions"] = np.stack([ac["rel_actions"].reshape(-1) for ac in pre_action_chunks])
+        
         if start_idx in self.start_ids:
-            episodes, pre_action_chunks = self.zip_sequence(start_idx, end_idx, self.action_chunk_size)
-            episode = {key: np.stack([ep[key] for ep in episodes]) for key in keys}
-            episode["pre_actions"] = np.stack([ac["rel_actions"].reshape(-1) for ac in pre_action_chunks])
             resets[0] = True
-        else:
-            episodes, pre_action_chunks = self.zip_sequence(start_idx - 1, end_idx, self.action_chunk_size)
-            episode = {key: np.stack([ep[key] for ep in episodes[1:]]) for key in keys}
-            episode["pre_actions"] = np.stack([ac["rel_actions"].reshape(-1) for ac in pre_action_chunks])
 
 
         episode["reset"] = resets
@@ -187,7 +185,7 @@ class BaseWMDiskDataset(BaseDataset):
     def zip_sequence(self, start_idx: int, end_idx: int, action_chunk_size: int) -> Dict[str, np.ndarray]:
         if not self.use_cached_data:
             episodes = [self.load_file(self._get_episode_name(file_idx)) for file_idx in range(start_idx, end_idx, action_chunk_size)]
-            pre_action_chunks = [self.load_file(self._get_episode_name_action_chunk(file_idx - 1)) for file_idx in range(start_idx, end_idx, action_chunk_size)]
+            pre_action_chunks = [self.load_file(self._get_episode_name_action_chunk(file_idx)) for file_idx in range(start_idx, end_idx, action_chunk_size)]
         else:
             episodes = [self.preloaded_data[file_idx] for file_idx in range(start_idx, end_idx, action_chunk_size)]
             assert False, "Zipping sequence with cached data is not implemented yet."
