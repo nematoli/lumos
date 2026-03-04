@@ -45,9 +45,11 @@ class VisionWMDiskDataset(BaseWMDiskDataset):
         self.use_cached_data = use_cached_data
         if self.use_cached_data:
             self.preloaded_data = {}  # Initialize as a dictionary
-            self.preload_dataset(self.abs_datasets_dir / "cached_data.pkl")
+            self.preloaded_data_action_chunk = {}  # Initialize as a dictionary
+            self.preload_dataset(self.abs_datasets_dir / "cached_data.pkl", self.abs_action_chunk_data_dir / "cached_data.pkl")
 
-    def preload_dataset(self, cached_data_path):
+
+    def preload_dataset(self, cached_data_path, cached_data_path_action_chunk):
         """Preloads the entire dataset into memory."""
         if cached_data_path.is_file():
             logger.info("Loading preloaded data from cache...")
@@ -64,7 +66,6 @@ class VisionWMDiskDataset(BaseWMDiskDataset):
                 data = {key: np.stack([np_obj[key]]) for key, _ in np_obj.items()}
 
                 value = {
-                    "rel_actions": np.squeeze(data["rel_actions"]),
                     "robot_obs": np.squeeze(data["robot_obs"]),
                     "rgb_static": np.squeeze(data["rgb_static"]),
                     "rgb_gripper": np.squeeze(data["rgb_gripper"]),
@@ -74,3 +75,21 @@ class VisionWMDiskDataset(BaseWMDiskDataset):
             with open(str(cached_data_path), "wb") as f:
                 pickle.dump(self.preloaded_data, f)
         logger.info("Preloaded the dataset into cache.")
+        if cached_data_path_action_chunk.is_file():
+            logger.info("Loading preloaded action chunk data from cache...")
+            with open(str(cached_data_path_action_chunk), "rb") as f:
+                self.preloaded_data_action_chunk = pickle.load(f)
+        else:
+            data_dir_list_action_chunk = sorted([item for item in self.abs_action_chunk_data_dir.iterdir()])
+            for file_path in tqdm(data_dir_list_action_chunk, desc="Preloading action chunk dataset"):
+                if "npz" not in file_path.suffix:
+                    continue
+                key = self.extract_episode_number(file_path)
+                np_obj = load_npz(file_path)
+                value = {
+                    "rel_actions": np.squeeze(np.stack([np_obj["rel_actions"]])),
+                }
+                self.preloaded_data_action_chunk[key] = value
+            with open(str(cached_data_path_action_chunk), "wb") as f:
+                pickle.dump(self.preloaded_data_action_chunk, f)
+        logger.info("Preloaded the action chunk dataset into cache.")

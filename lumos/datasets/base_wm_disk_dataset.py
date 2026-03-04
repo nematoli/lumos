@@ -188,7 +188,7 @@ class BaseWMDiskDataset(BaseDataset):
             pre_action_chunks = [self.load_file(self._get_episode_name_action_chunk(file_idx)) for file_idx in range(start_idx, end_idx, action_chunk_size)]
         else:
             episodes = [self.preloaded_data[file_idx] for file_idx in range(start_idx, end_idx, action_chunk_size)]
-            assert False, "Zipping sequence with cached data is not implemented yet."
+            pre_action_chunks = [self.preloaded_data_action_chunk[file_idx] for file_idx in range(start_idx, end_idx, action_chunk_size)]
         
         return episodes, pre_action_chunks
 
