@@ -109,16 +109,16 @@ class BaseWMDiskDataset(BaseDataset):
         end_idx = start_idx + window_size
         keys = list(chain(*self.observation_space.values()))
         keys.remove("rel_actions")
-
-        resets = np.zeros((window_size, 1), dtype=bool)
-        if self.reset_prob != 0:
-            resets = np.random.rand(window_size, 1) <= self.reset_prob
         
         episodes, pre_action_chunks = self.zip_sequence(start_idx, end_idx, self.action_chunk_size)
         episode = {key: np.stack([ep[key] for ep in episodes]) for key in keys}
         # "rel_actions" here are pre-action chunks so no need to roll them.
         episode["pre_actions"] = np.stack([ac["rel_actions"].reshape(-1) for ac in pre_action_chunks])
         
+        resets = np.zeros((episode["pre_actions"].shape[0], 1), dtype=bool)
+        if self.reset_prob != 0:
+            resets = np.random.rand(episode["pre_actions"].shape[0], 1) <= self.reset_prob
+
         if start_idx in self.start_ids:
             resets[0] = True
 
