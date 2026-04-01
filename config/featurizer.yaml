@@ -2,6 +2,7 @@ defaults:
   - setup
   - datamodule: static_gripper_cam
   - world_model: dreamer_v2
+  - override datamodule/batch_sampler: ac_equidistant
   - _self_
 
 exp_dir: ${wm_chk_dir}

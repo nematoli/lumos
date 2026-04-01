@@ -1,0 +1,7 @@
+_target_: lumos.utils.samplers.ActionChunkEquiSampler
+_recursive_: false
+
+data_size: ???
+seq_len: ${datamodule.seq_len}
+init_idx: null
+action_chunk: ${datamodule.action_chunk_size}
